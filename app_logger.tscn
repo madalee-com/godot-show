@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://dopnaxau01v7i"]
+
+[ext_resource type="Script" uid="uid://b6co7wfl6fimo" path="res://app_logger.gd" id="1_0k4wt"]
+
+[sub_resource type="SystemFont" id="SystemFont_0k4wt"]
+font_names = PackedStringArray("Monospace")
+subpixel_positioning = 0
+
+[node name="Log" type="RichTextLabel" unique_id=1781456426]
+offset_right = 1.0
+size_flags_vertical = 3
+focus_mode = 2
+theme_override_fonts/mono_font = SubResource("SystemFont_0k4wt")
+bbcode_enabled = true
+scroll_following = true
+context_menu_enabled = true
+justification_flags = 161
+threaded = true
+selection_enabled = true
+script = ExtResource("1_0k4wt")

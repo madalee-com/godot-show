@@ -1,0 +1,73 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Godot-Show"
+config/description="This little app is built for Twitch streamers that want to show clips of other streamers when they shout them out."
+config/version="0.5"
+run/main_scene="uid://qm8jm83n8b41"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+run/low_processor_mode=true
+config/icon="res://icon.svg"
+config/settings_file="user://settings.cfg"
+
+[audio]
+
+general/text_to_speech=true
+
+[autoload]
+
+Twitch="*uid://cs711jchyh30g"
+
+[display]
+
+window/size/viewport_width=870
+window/size/viewport_height=585
+window/size/initial_position_type=4
+window/size/extend_to_title=true
+window/size/window_width_override=870
+window/size/window_height_override=585
+window/energy_saving/keep_screen_on=false
+window/handheld/orientation=1
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/twitcher/plugin.cfg")
+
+[gui]
+
+theme/custom="uid://bmkjdsy1yeyk2"
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+
+[twitcher]
+
+editor/game_oauth_token="uid://m7epy882axmp"
+editor/game_oauth_setting="res://config/twitch_oauth_setting.tres"
+editor/project_preset=&"Other"
+logs/TwitchAuth="debug"
+logs/TwitchAPI="debug"
+logs/TwitchEventsubConfig="debug"
+logs/TwitchEventsub="debug"
+logs/TwitchService="debug"
+"logs/Twitcher Plugin"="debug"
+editor/default_scopes="uid://c1yajb6gqs3u8"
+editor/show_setup_on_startup=false
+editor/reward_folder="res://config/rewards"
