@@ -1,10 +1,10 @@
 # Godot-Show
 
-![GitHub Release](https://img.shields.io/github/v/release/madalee/godot-show)
+![GitHub Release](https://img.shields.io/github/v/release/madalee-com/godot-show)
 ![godot version](https://img.shields.io/badge/godot-v4.6.0-blue?logo=godotengine)
-![Downloads](https://img.shields.io/github/downloads/madalee/godot-show/total
+![Downloads](https://img.shields.io/github/downloads/madalee-com/godot-show/total
 )
-![GitHub License](https://img.shields.io/github/license/madalee/godot-show)
+![GitHub License](https://img.shields.io/github/license/madalee-com/godot-show)
 
 **Show-off random clips from other streamers when you shout them out**
 
