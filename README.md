@@ -99,7 +99,7 @@ The first time you start Godot-Show you'll need to connect it to Twitch.  You ca
 ```
 
 ## Building/Compiling
-1. Clone the repo `git clone https://github.com/madalee/godot-show`
+1. Clone the repo `git clone https://github.com/madalee-com/godot-show`
 2. Download and run [Godot 4.6](https://godotengine.org/) or newer
 3. Open the project.godot file
 4. Click Project->Export (You need the latest Export Templates for Godot, available on the Export page)
@@ -124,7 +124,7 @@ We welcome contributions! Open an issue or a PR.
 
 ## License
 
-This project is provided under the GNU General Public License v3.0. See the [LICENSE](https://github.com/madalee/godot-show/blob/master/LICENSE) file for more information.
+This project is provided under the GNU General Public License v3.0. See the [LICENSE](./godot-show/blob/master/LICENSE) file for more information.
 
 ## Acknowledgments
 
