@@ -8,7 +8,7 @@
 
 **Show-off random clips from other streamers when you shout them out**
 
-[Screenshot or GIF demo here]
+![Godot Show in Action](./readme-assets/godot-show-in-action.gif)
 
 ## Features
 
@@ -35,6 +35,8 @@
 ### Configure OBS
 Godot-Show does it's work by changing the URL of a Media Source in OBS.  It then uses a pair of filters to scale and fade in/out the clip.
 
+![Configure OBS](./readme-assets/obs-setup.gif)
+
 1. Add a Media Source in OBS
 2. Rename the Media Source to "Godot-Show". This name can be configured later, so pick any unique name you want.
 3. Configure the Media Source how you want, we recommend uncheckng "Show nothing when playback ends"
@@ -55,6 +57,8 @@ Just download the release for your OS, and run
 ### Initial Godot-Show configuration
 The first time you start Godot-Show you'll need to connect it to Twitch.  You can click the "Connect on Startup" option to have the application auto-connect in the furture.
 
+![Godot-Show Initial Setup](readme-assets/godot-show-setup.gif)
+
 1. Click "Connect to Twitch"
 2. A browser window/tab will open asking if you authorize Godot-Show to do it's stuff, click Authorize
 3. If your OBS Websocket is set to the defaults, Godot-Show should automatically connect.  You should see the message "Connection to OBS established"
@@ -62,6 +66,7 @@ The first time you start Godot-Show you'll need to connect it to Twitch.  You ca
 5. If the messages "Connection to OBS established" and "Connected to Twitch" both show in the log window, then you are ready to use Godot-Show
 
 ## Additional Settings
+![Settings Screen](readme-assets/settings.png)
 ### OBS Connection Info
 | Settings | Default | Description |
 |--------|---------|-------------|
@@ -90,6 +95,14 @@ The first time you start Godot-Show you'll need to connect it to Twitch.  You ca
 | `Grow on Show` | Enabled | If enabled, the clip with grow/scale up to full size as it's shown |
 | `Fade In` | Enabled | If enabled, the clip will Fade In when being shown |
 | `Fade Out` | Enabled | If enabled, the clip will Fade Out at the end |
+
+## Some Notes
+
+#### How Pronounce?
+Go-doh-show
+
+#### Why Godot?
+It works on everything, development is fully self contained between Godot and the source code, and it makes sense to use something that understands frame pacing when doing animations.
 
 ## Roadmap
 ```
