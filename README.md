@@ -118,13 +118,14 @@ We welcome contributions! Open an issue or a PR.
 
 ## Support
 
-- Check [existing issues](link)
-- Join our [Discord](link)
-- Open a [new issue](link)
+- Check [existing issues](./issues)
+- Message us on Discord @madalee
+- Interact with us on [Twitch](https://www.twitch.tv/madalee_com)
+- Open a [new issue](./issues/new)
 
 ## License
 
-This project is provided under the GNU General Public License v3.0. See the [LICENSE](./godot-show/blob/master/LICENSE) file for more information.
+This project is provided under the GNU General Public License v3.0. See the [LICENSE](./blob/master/LICENSE) file for more information.
 
 ## Acknowledgments
 
