@@ -27,13 +27,19 @@ var is_loading = false
 func _on_ready() -> void:
 	## connect to logger signals
 	logger.app_logger.log_message.connect(_log_message)
+	## connect to twitch signals
+	Twitch.token_handler_unauthenticated.connect(_on_token_handler_unauthenticated)
 	load_settings()
 	## Auto-connect to Twitch if enabled
 	if %AutoConnect.button_pressed:
 		twitch_setup()
+	#Enable/Disable Forget Twitch buttons
+	refresh_twitch_token_status()
 	## Enable OBS connection
 	%Obs.enable_connect()
 
+func _on_token_handler_unauthenticated():
+	refresh_twitch_token_status()
 
 ## Settings Load/Save
 func load_settings() -> void:
@@ -44,6 +50,7 @@ func load_settings() -> void:
 	var err = settings.load(ProjectSettings.get_setting("application/config/settings_file"))
 	# If the file didn't load, ignore it.
 	if err != OK:
+		is_loading = false
 		return
 	# Iterate over all sections of the settings file.
 	for section in settings.get_sections():
@@ -129,6 +136,13 @@ func save_settings() -> void:
 	## Save the settings to file.
 	settings.save(ProjectSettings.get_setting("application/config/settings_file"))
 
+func refresh_twitch_token_status():
+	Twitch.auth.token.load_tokens()
+	if Twitch.auth.token.is_token_valid():
+		%ForgetTwitchLogin.disabled = false
+	else:
+		%ForgetTwitchLogin.disabled = true
+
 ## Twitch Setup
 func twitch_setup() -> bool:
 	logger.log("Attempting connection to Twitch")
@@ -136,6 +150,7 @@ func twitch_setup() -> bool:
 	if await Twitch.setup():
 		var user = await Twitch.get_current_user()
 		logger.log_success("Connected to Twitch")
+		%ForgetTwitchLogin.disabled = false
 		## Subscribe to chat message events
 		await Twitch.subscribe_event(
 			TwitchEventsubDefinition.CHANNEL_CHAT_MESSAGE,
@@ -145,8 +160,15 @@ func twitch_setup() -> bool:
 			},
 		)
 		return true
+	refresh_twitch_token_status()
 	logger.log_error("Error connecting to Twitch")
 	return false
+
+func forget_twitch():
+	#Twitch.eventsub.close_connection()
+	await Twitch.unsetup()
+	Twitch.auth.token.remove_tokens()
+	refresh_twitch_token_status()
 
 ## Handle Twitch connect button
 func _on_twitch_connect_pressed() -> void:
@@ -264,3 +286,7 @@ func _on_obs_fade_in_toggled(toggled_on: bool) -> void:
 func _on_obs_fade_out_toggled(toggled_on: bool) -> void:
 	save_settings()
 	%Commands.fade_out = toggled_on
+
+
+func _on_forget_twitch_login_pressed() -> void:
+	forget_twitch()

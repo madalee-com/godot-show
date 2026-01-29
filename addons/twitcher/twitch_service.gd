@@ -6,6 +6,8 @@ extends Twitcher
 ## Makes some actions easier to use.
 class_name TwitchService
 
+signal token_handler_unauthenticated
+
 const TwitchEditorSettings = preload("res://addons/twitcher/editor/twitch_editor_settings.gd")
 ## When the poll doesn't end after the offical endtime + POLL_TIMEOUT_MS. The wait loop for poll end 
 ## event will be stopped to prevent endless loops.
@@ -439,3 +441,7 @@ func get_cheermotes(definition: TwitchCheermoteDefinition) -> Dictionary:
 	return await media_loader.get_cheermotes(definition)
 
 #endregion
+
+
+func _on_token_handler_unauthenticated() -> void:
+	token_handler_unauthenticated.emit()

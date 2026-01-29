@@ -46,6 +46,17 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Connect on Startup"
 
+[node name="Control" type="Control" parent="BoxContainer/TabContainer/Home/HBoxContainer" unique_id=1811661823]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ForgetTwitchLogin" type="Button" parent="BoxContainer/TabContainer/Home/HBoxContainer" unique_id=243853028]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Forget Twitch Login"
+flat = true
+
 [node name="AppLogger" parent="BoxContainer/TabContainer/Home" unique_id=128935556 instance=ExtResource("4_1bvp3")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -475,6 +486,7 @@ poll_time = 0.016
 [connection signal="ready" from="." to="." method="_on_ready"]
 [connection signal="pressed" from="BoxContainer/TabContainer/Home/HBoxContainer/TwitchConnect" to="." method="_on_twitch_connect_pressed"]
 [connection signal="toggled" from="BoxContainer/TabContainer/Home/HBoxContainer/AutoConnect" to="." method="_on_auto_connect_toggled"]
+[connection signal="pressed" from="BoxContainer/TabContainer/Home/HBoxContainer/ForgetTwitchLogin" to="." method="_on_forget_twitch_login_pressed"]
 [connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer/ObsHost" to="." method="_on_obs_host_text_changed"]
 [connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2/ObsPort" to="." method="_on_obs_port_value_changed"]
 [connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3/ObsPassword" to="." method="_on_obs_password_text_changed"]

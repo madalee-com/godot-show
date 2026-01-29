@@ -43,6 +43,7 @@ oauth_setting = ExtResource("2_oxajb")
 metadata/_custom_type_script = "uid://cw30cwveway65"
 
 [node name="TwitchEventsub" type="Node" parent="." unique_id=1572144212 node_paths=PackedStringArray("api")]
+unique_name_in_owner = true
 script = ExtResource("6_v88il")
 api = NodePath("../TwitchAPI")
 metadata/_custom_type_script = "uid://blmhj3j00yk45"
@@ -52,3 +53,4 @@ script = ExtResource("12_1vs0w")
 
 [connection signal="device_code_requested" from="TwitchAuth" to="DeviceHandler" method="_on_twitch_auth_device_code_requested"]
 [connection signal="device_code_requested" from="TwitchAuth/OAuth" to="DeviceHandler" method="_on_o_auth_device_code_requested"]
+[connection signal="unauthenticated" from="TwitchAuth/TokenHandler" to="." method="_on_token_handler_unauthenticated"]
