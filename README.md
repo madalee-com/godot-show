@@ -12,8 +12,6 @@ Show-off random clips from other streamers when you shout them out
 ![Downloads](https://img.shields.io/github/downloads/madalee-com/godot-show/total?logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NDggNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIHY3LjEuMCBieSBAZm9udGF3ZXNvbWUgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbSBMaWNlbnNlIC0gaHR0cHM6Ly9mb250YXdlc29tZS5jb20vbGljZW5zZS9mcmVlIENvcHlyaWdodCAyMDI2IEZvbnRpY29ucywgSW5jLi0tPjxwYXRoIGZpbGw9IiNmZmZmZmYiIGQ9Ik0yNTYgMzJjMC0xNy43LTE0LjMtMzItMzItMzJzLTMyIDE0LjMtMzIgMzJsMCAyMTAuNy00MS40LTQxLjRjLTEyLjUtMTIuNS0zMi44LTEyLjUtNDUuMyAwcy0xMi41IDMyLjggMCA0NS4zbDk2IDk2YzEyLjUgMTIuNSAzMi44IDEyLjUgNDUuMyAwbDk2LTk2YzEyLjUtMTIuNSAxMi41LTMyLjggMC00NS4zcy0zMi44LTEyLjUtNDUuMyAwTDI1NiAyNDIuNyAyNTYgMzJ6TTY0IDMyMGMtMzUuMyAwLTY0IDI4LjctNjQgNjRsMCAzMmMwIDM1LjMgMjguNyA2NCA2NCA2NGwzMjAgMGMzNS4zIDAgNjQtMjguNyA2NC02NGwwLTMyYzAtMzUuMy0yOC43LTY0LTY0LTY0bC00Ni45IDAtNTYuNiA1Ni42Yy0zMS4yIDMxLjItODEuOSAzMS4yLTExMy4xIDBMMTEwLjkgMzIwIDY0IDMyMHptMzA0IDU2YTI0IDI0IDAgMSAxIDAgNDggMjQgMjQgMCAxIDEgMC00OHoiLz48L3N2Zz4=)
 ![GitHub License](https://img.shields.io/github/license/madalee-com/godot-show?logo=gplv3)
 
-![Godot Show in Action](./readme-assets/godot-show-in-action.gif)
-
 ## Features
 
 - **Show clips on shoutouts:** Automatically show a random clip when you use !so
@@ -21,6 +19,8 @@ Show-off random clips from other streamers when you shout them out
 - **Cross-platform:** Thanks to being based on Godot, the app is available for most OS
 - **Easy Twitch Login:** Unlike other tools, Godot-show has a 1 button connect to Twitch
 - **Direct OBS integration:** Godot-show plays the clips in an OBS Media Source
+
+![Godot Show in Action](./readme-assets/godot-show-in-action.gif)
 
 ## Quick Start
 
