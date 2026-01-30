@@ -12,11 +12,12 @@ config_version=5
 
 config/name="Godot-Show"
 config/description="This little app is built for Twitch streamers that want to show clips of other streamers when they shout them out."
-config/version="0.5"
+config/version="0.51"
 run/main_scene="uid://qm8jm83n8b41"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 run/low_processor_mode=true
-config/icon="res://icon.svg"
+boot_splash/image="uid://dsichk7vg44np"
+config/icon="uid://vj6mspjxdm6"
 config/settings_file="user://settings.cfg"
 
 [audio]
