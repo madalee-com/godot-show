@@ -111,6 +111,7 @@ It works on everything, development is fully self contained between Godot and th
 ## Roadmap
 ```
 - [x] Release the initial version
+- [ ] Setup CI
 - [ ] Add a "hey you want me to setup OBS for you?" dialog
 - [ ] Add more animation options, such as "inflate" mode
 - [ ] Have people tell us it doesn't work
