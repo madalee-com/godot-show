@@ -25,7 +25,6 @@ Show-off random clips from other streamers when you shout them out
 ## Quick Start
 
 - Add a Media Source in OBS and name it Godot Show
-- Uncheck "Local File" on the media source
 - Download and run the application
 - Press "Connect to Twitch" and Authorize Godot-Show in the browser
 - Use !so to send a shoutout and see the clip play in OBS
@@ -44,7 +43,7 @@ Godot-Show does it's work by changing the URL of a Media Source in OBS.  It then
 
 1. Add a Media Source in OBS
 2. Rename the Media Source to "Godot-Show". This name can be configured later, so pick any unique name you want.
-3. Configure the Media Source how you want, however, you must uncheck "Local File". We recommend uncheckng "Show nothing when playback ends"
+3. Configure the Media Source how you want. We recommend uncheckng "Show nothing when playback ends"
 4. Add a "Scaling/Aspect Ratio" Effects Filter to the source. You can rename this if you want, and configure the name in the application later. This is only required if you want the video to grow/scale in to the scene.
 5. Add a "Color Correction" Effects Filter to the source. You can rename this if you want, and configure the name in the application later. This is only required if you want the video to fade in/out when showing and hiding.
 6. If the WebSocket server isn't enabled, you need to enable it now.
@@ -112,6 +111,7 @@ It works on everything, development is fully self contained between Godot and th
 ## Roadmap
 ```
 - [x] Release the initial version
+- [ ] Add a "setup OBS for me" button
 - [ ] Have people tell us it doesn't work
 - [ ] Cry
 ```

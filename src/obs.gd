@@ -27,7 +27,7 @@ const MediaInputStates := {
 	OBS_MEDIA_STATE_PAUSED = "OBS_MEDIA_STATE_PAUSED",
 	OBS_MEDIA_STATE_STOPPED = "OBS_MEDIA_STATE_STOPPED",
 	OBS_MEDIA_STATE_ENDED = "OBS_MEDIA_STATE_ENDED",
-	OBS_MEDIA_STATE_ERROR = "OBS_MEDIA_STATE_ERROR"
+	OBS_MEDIA_STATE_ERROR = "OBS_MEDIA_STATE_ERROR",
 }
 
 ## Signals
@@ -53,6 +53,10 @@ signal source_filter_settings_error
 signal got_source_filter
 ## Emitted when media input status is received
 signal got_media_input_status(media_state, media_duration, media_cursor)
+## Emitted when input settings are received
+signal got_input_settings(input_settings: Dictionary)
+## Emitted when default input settings are received
+signal got_input_default_settings(input_settings: Dictionary)
 
 ## Logger instance
 @onready var logger = %AppLogger
@@ -65,6 +69,7 @@ var obs_connected = false
 var obs_disconnected = false
 ## Time in seconds between OBS connection retries
 var obs_retry_time = 1.0
+
 
 ## Called when the connection to OBS is established
 func _on_connection_established() -> void:
@@ -114,6 +119,10 @@ func _on_data_received(data: ServerObsMessage) -> void:
 						source_filter_enabled.emit()
 					"SetSourceFilterSettings":
 						source_filter_settings_set.emit()
+					"GetInputDefaultSettings":
+						got_input_default_settings.emit(resp["d"])
+					"GetInputSettings":
+						got_input_settings.emit(resp["d"])
 					"GetSourceFilter":
 						got_source_filter.emit(resp["d"].responseData)
 					"GetMediaInputStatus":
@@ -150,6 +159,34 @@ func set_input_settings(input_name: String, input_settings: Dictionary):
 		{
 			"inputName": input_name,
 			"inputSettings": input_settings,
+		},
+		UUIDUtil.v7(),
+	)
+
+
+### Function: get_input_settings(input_name : String) ###
+## Get the input settings for a specific input in OBS.
+##
+## @param input_name The name of the media input to get settings for.
+func get_input_settings(input_name: String):
+	send_command(
+		"GetInputSettings",
+		{
+			"inputName": input_name,
+		},
+		UUIDUtil.v7(),
+	)
+
+
+### Function: get_input_settings(input_name : String) ###
+## Get the default input settings for a specific input in OBS.
+##
+## @param input_name The name of the media input to get settings for.
+func get_input_default_settings(input_kind: String):
+	send_command(
+		"GetInputDefaultSettings",
+		{
+			"inputKind": input_kind,
 		},
 		UUIDUtil.v7(),
 	)

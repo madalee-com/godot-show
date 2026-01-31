@@ -13,7 +13,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 extends Node
 
 const HttpUtil = preload("res://addons/twitcher/lib/http/http_util.gd")
@@ -101,7 +100,7 @@ func _process(delta: float) -> void:
 func _on_shoutout_command_received(
 		_from_username: String,
 		_info: TwitchCommandInfo,
-		args: PackedStringArray,
+	args: PackedStringArray,
 ) -> void:
 	logger.log("Shoutout triggered")
 	# Get a random clip from the specified user
@@ -417,7 +416,7 @@ func play_clip(clip: TwitchClip):
 		% [clip.title, clip.broadcaster_name, clip.creator_name],
 	)
 	current_clip = clip
-	obs.set_input_settings(source_name, { "input": clip.url })
+	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
 
 
 ## This function clears the current clip by setting the OBS input settings to an empty string.
