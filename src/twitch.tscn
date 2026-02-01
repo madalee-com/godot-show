@@ -53,4 +53,3 @@ script = ExtResource("12_1vs0w")
 
 [connection signal="device_code_requested" from="TwitchAuth" to="DeviceHandler" method="_on_twitch_auth_device_code_requested"]
 [connection signal="device_code_requested" from="TwitchAuth/OAuth" to="DeviceHandler" method="_on_o_auth_device_code_requested"]
-[connection signal="unauthenticated" from="TwitchAuth/TokenHandler" to="." method="_on_token_handler_unauthenticated"]

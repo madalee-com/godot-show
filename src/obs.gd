@@ -57,6 +57,17 @@ signal got_media_input_status(media_state, media_duration, media_cursor)
 signal got_input_settings(input_settings: Dictionary)
 ## Emitted when default input settings are received
 signal got_input_default_settings(input_settings: Dictionary)
+## Emitted when a scene item transform changes
+signal scene_item_transform_changed(event_data: Dictionary)
+
+signal got_scene_item_id(scene_item_id: float)
+
+signal got_scene_item_transform(data: Dictionary)
+
+signal got_scene_list(data: Dictionary)
+
+signal got_scene_item_list(scene_item_list: Array)
+
 
 ## Logger instance
 @onready var logger = %AppLogger
@@ -109,6 +120,8 @@ func _on_data_received(data: ServerObsMessage) -> void:
 					media_input_playback_started.emit(event.event_data)
 				"MediaInputPlaybackEnded":
 					media_input_playback_ended.emit(event.event_data)
+				"SceneItemTransformChanged":
+					scene_item_transform_changed.emit(event.event_data)
 		self.OpCodeEnums.WebSocketOpCode.RequestResponse.IDENTIFIER_VALUE:
 			var resp: RequestResponse = data
 			if resp["d"].requestStatus.result:
@@ -124,7 +137,15 @@ func _on_data_received(data: ServerObsMessage) -> void:
 					"GetInputSettings":
 						got_input_settings.emit(resp["d"])
 					"GetSourceFilter":
-						got_source_filter.emit(resp["d"].responseData)
+						got_source_filter.emit(resp["d"].responseData.sceneItems)
+					"GetSceneList":
+						got_scene_list.emit(resp["d"].responseData.scenes)
+					"GetSceneItemList":
+						got_scene_item_list.emit(resp["d"].responseData.sceneItems)
+					"GetSceneItemId":
+						got_scene_item_id.emit(resp["d"].responseData.sceneItemId)
+					"GetSceneItemTransform":
+						got_scene_item_transform.emit(resp["d"].responseData.sceneItemTransform)
 					"GetMediaInputStatus":
 						got_media_input_status.emit(resp["d"].responseData.mediaState, resp["d"].responseData.mediaDuration, resp["d"].responseData.mediaCursor)
 			else:
@@ -253,4 +274,51 @@ func get_media_input_status(source_name: String):
 			"inputName": source_name,
 		},
 		UUIDUtil.v7(),
+	)
+
+
+## 
+##
+## 
+func get_scene_item_id(scene_name: String, source_name: String):
+	send_command(
+		"GetSceneItemId",
+		{
+			"sceneName": scene_name,
+			"sourceName": source_name,
+		},
+		UUIDUtil.v7(),
+	)
+
+## 
+##
+## 
+func get_scene_item_transform(scene_name: String, scene_item_id: float):
+	send_command(
+		"GetSceneItemTransform",
+		{
+			"sceneName": scene_name,
+			"sceneItemId": scene_item_id,
+		},
+		UUIDUtil.v7(),
+	)
+
+## 
+##
+## 
+func get_scene_list():
+	send_command(
+		"GetSceneList",
+	)
+
+
+## 
+##
+## 
+func get_scene_item_list(scene_name: String):
+	send_command(
+		"GetSceneItemList",
+		{
+			"sceneName": scene_name,
+		}
 	)

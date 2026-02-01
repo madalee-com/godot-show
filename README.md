@@ -83,6 +83,15 @@ The first time you start Godot-Show you'll need to connect it to Twitch.  You ca
 | `Source Name` | Godot-Show | The name of the Media Source you added in OBS |
 | `Scaling Filter Name` | Scaling/Aspect Ratio | The name of the Scaling/Aspect Ratio filter |
 | `Opacity Filter Name` | Color Correction | The name of the Color Correction filter |
+### Who can trigger the clip?
+| Settings | Default | Description |
+|--------|---------|-------------|
+| `Everyone` | Disabled | Allow all viewers to use the !so command for clips|
+| `VIPs` | Disabled | Allow VIPs to use the !so command for clips |
+| `Subscribers` | Disabled | Allow subscribers to use the !so command for clips |
+| `Mods` | Enabled | Allow mods to use the !so command for clips |
+| `Lead Mods` | Enabled | Allow lead mods to use the !so command for clips |
+| `Streamer` | Enabled | Allow streamer to use the !so command for clips |
 ### Timing Settings
 | Settings | Default | Description |
 |--------|---------|-------------|
@@ -111,10 +120,17 @@ It works on everything, development is fully self contained between Godot and th
 ## Roadmap
 ```
 - [x] Release the initial version
+- [x] Have people tell us it doesn't work
+- [x] Fix bugs:
+- [x] Only lets broadcaster !so
+- [x] Only works at the configured ratio
+- [ ] Some code cleanup
 - [ ] Setup CI
 - [ ] Add a "hey you want me to setup OBS for you?" dialog
 - [ ] Add more animation options, such as "inflate" mode
-- [ ] Have people tell us it doesn't work
+- [ ] Play a sound when growing
+- [ ] Option to avoid clip replays
+- [ ] Command to add a clip to queue
 ```
 
 ## Building/Compiling

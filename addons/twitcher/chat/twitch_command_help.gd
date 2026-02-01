@@ -1,10 +1,10 @@
 @icon("res://addons/twitcher/assets/command-icon.svg")
 extends TwitchCommand
 
+## Provides a simple way to give the viewer an overview about the commands.
 class_name TwitchCommandHelp
 
-## Used to determine the Sender User if empty and to send the message back (Can be empty will automatically look for
-## first [TwitchAPI] in the scene tree)
+## Used to determine the Sender User if empty and to send the message back
 @export var twitch_api: TwitchAPI
 ## Sender User that will send the answers on the command. Can be empty then the current user will be used
 @export var sender_user: TwitchUser
@@ -51,11 +51,22 @@ func _on_command_receive(from_username: String, info: TwitchCommandInfo, args: P
 		var message_body: TwitchSendWhisper.Body = TwitchSendWhisper.Body.new()
 		message_body.message = help_message
 		twitch_api.send_whisper(message_body, message["to_user_id"], message["from_user_id"])
-		
+
+
+## Needed because when you debug and change code etc. Godot will add the commands multiple times.
+func cleanup_redundant_commands() -> void:
+	var command_set: Dictionary = {}
+	for command in TwitchCommand.ALL_COMMANDS:
+		command_set[command.command] = command
+	var sanatized_commands: Array = command_set.values()
+	TwitchCommand.ALL_COMMANDS.assign(sanatized_commands)
+	
 		
 func _generate_help_message(args: Array[String], whisper_only: bool) -> String:
 	var message: String = ""
 	var show_details: bool = not args.is_empty()
+		
+	cleanup_redundant_commands()
 		
 	for command in TwitchCommand.ALL_COMMANDS:
 		if command == self: continue
@@ -66,11 +77,14 @@ func _generate_help_message(args: Array[String], whisper_only: bool) -> String:
 		if not args.is_empty():
 			should_be_added = should_be_added && _is_command_in_args(command, args)
 		
+		# Only command for now, cause no idea how to show the contains / regex command in the help summary.
+		should_be_added = should_be_added && command is TwitchCommand
+		
 		if should_be_added:
 			if show_details:
-				message += "[%s%s - %s] " % [command.command_prefixes[0], command.command, command.description]
+				message += "[%s - %s] " % [command, command.description]
 			else:
-				message += "%s%s, " % [command.command_prefixes[0], command.command]
+				message += "%s, " % command
 	
 	if message == "":
 		return "No commands registered"

@@ -28,7 +28,7 @@ func _on_ready() -> void:
 	## connect to logger signals
 	logger.app_logger.log_message.connect(_log_message)
 	## connect to twitch signals
-	Twitch.token_handler_unauthenticated.connect(_on_token_handler_unauthenticated)
+	Twitch.auth.token_handler.unauthenticated.connect(_on_token_handler_unauthenticated)
 	load_settings()
 	## Auto-connect to Twitch if enabled
 	if %AutoConnect.button_pressed:
@@ -101,6 +101,19 @@ func load_settings() -> void:
 			_on_fade_time_value_changed(%FadeTime.value)
 			%AnimationFramerate.value = settings.get_value(section, "animation_framerate", %AnimationFramerate.value)
 			_on_animation_framerate_value_changed(%AnimationFramerate.value)
+		#version agnostic
+		%CanSOViewer.button_pressed = settings.get_value(section, "can_so_viewer", %CanSOViewer.button_pressed)
+		_on_can_so_viewer_toggled(%CanSOViewer.button_pressed)
+		%CanSOVIP.button_pressed = settings.get_value(section, "can_so_vip", %CanSOVIP.button_pressed)
+		_on_can_so_vip_toggled(%CanSOVIP.button_pressed)
+		%CanSOSub.button_pressed = settings.get_value(section, "can_so_sub", %CanSOSub.button_pressed)
+		_on_can_so_sub_toggled(%CanSOSub.button_pressed)
+		%CanSOMod.button_pressed = settings.get_value(section, "can_so_mod", %CanSOMod.button_pressed)
+		_on_can_so_mod_toggled(%CanSOMod.button_pressed)
+		%CanSOLeadMod.button_pressed = settings.get_value(section, "can_so_lead_mod", %CanSOLeadMod.button_pressed)
+		_on_can_so_lead_mod_toggled(%CanSOLeadMod.button_pressed)
+		%CanSOStreamer.button_pressed = settings.get_value(section, "can_so_streamer", %CanSOStreamer.button_pressed)
+		_on_can_so_streamer_toggled(%CanSOStreamer.button_pressed)
 	## Re-enable saving.
 	is_loading = false
 
@@ -133,6 +146,13 @@ func save_settings() -> void:
 	settings.set_value(section, "obs_fade_out", %ObsFadeOut.button_pressed)
 	settings.set_value(section, "fade_time", %FadeTime.value)
 	settings.set_value(section, "animation_framerate", %AnimationFramerate.value)
+	settings.set_value(section, "can_so_viewer", %CanSOViewer.button_pressed)
+	settings.set_value(section, "can_so_vip", %CanSOVIP.button_pressed)
+	settings.set_value(section, "can_so_sub", %CanSOSub.button_pressed)
+	settings.set_value(section, "can_so_mod", %CanSOMod.button_pressed)
+	settings.set_value(section, "can_so_lead_mod", %CanSOLeadMod.button_pressed)
+	settings.set_value(section, "can_so_streamer", %CanSOStreamer.button_pressed)
+	
 	## Save the settings to file.
 	settings.save(ProjectSettings.get_setting("application/config/settings_file"))
 
@@ -294,3 +314,65 @@ func _on_forget_twitch_login_pressed() -> void:
 
 func _on_about_button_pressed() -> void:
 	%AboutPanel.popup_centered()
+
+
+func refresh_so_permissions() -> void:
+	var flag = 0
+	if %CanSOVIP.button_pressed:
+		flag += TwitchCommandBase.PermissionFlag.VIP
+	if %CanSOSub.button_pressed:
+		flag += TwitchCommandBase.PermissionFlag.SUB
+	if %CanSOMod.button_pressed:
+		flag += TwitchCommandBase.PermissionFlag.MOD
+	if %CanSOLeadMod.button_pressed:
+		flag += TwitchCommandBase.PermissionFlag.LEAD_MOD
+	if %CanSOStreamer.button_pressed:
+		flag += TwitchCommandBase.PermissionFlag.STREAMER
+	if %CanSOViewer.button_pressed:
+		flag = 0
+	$Commands/Shoutout.permission_level = flag
+
+func _on_can_so_viewer_toggled(_toggled_on: bool) -> void:
+	if _toggled_on:
+		%CanSOVIP.button_pressed = true
+		%CanSOSub.button_pressed = true
+		%CanSOMod.button_pressed = true
+		%CanSOLeadMod.button_pressed = true
+		%CanSOStreamer.button_pressed = true
+	refresh_so_permissions()
+	save_settings()
+
+
+func _on_can_so_vip_toggled(_toggled_on: bool) -> void:
+	if !_toggled_on:
+		%CanSOViewer.button_pressed = false
+	refresh_so_permissions()
+	save_settings()
+
+
+func _on_can_so_sub_toggled(_toggled_on: bool) -> void:
+	if !_toggled_on:
+		%CanSOViewer.button_pressed = false
+	refresh_so_permissions()
+	save_settings()
+
+
+func _on_can_so_mod_toggled(_toggled_on: bool) -> void:
+	if !_toggled_on:
+		%CanSOViewer.button_pressed = false
+	refresh_so_permissions()
+	save_settings()
+
+
+func _on_can_so_lead_mod_toggled(_toggled_on: bool) -> void:
+	if !_toggled_on:
+		%CanSOViewer.button_pressed = false
+	refresh_so_permissions()
+	save_settings()
+
+
+func _on_can_so_streamer_toggled(_toggled_on: bool) -> void:
+	if !_toggled_on:
+		%CanSOViewer.button_pressed = false
+	refresh_so_permissions()
+	save_settings()

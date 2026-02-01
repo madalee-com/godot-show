@@ -81,6 +81,11 @@ var cur_opacity = 0.0
 ## Previous state of the media input
 var last_media_state = null
 
+var cur_clip_ratio = 1.0
+
+var cur_scene_item_id = 0.0
+var cur_scene_name = ""
+
 
 ## Main process function that handles frame timing and animation updates
 func _process(delta: float) -> void:
@@ -143,11 +148,32 @@ func _on_clip_ended() -> void:
 		await get_tree().create_timer(queue_delay).timeout
 		process_queue()
 
+func find_scene_and_source_id():
+	obs.get_scene_list()
+	var scene_list = await obs.got_scene_list
+	for cur_scene in scene_list:
+		obs.get_scene_item_list(cur_scene.sceneName)
+		var scene_item_list: Array = await obs.got_scene_item_list
+		var i = scene_item_list.find_custom(func (e): return e.sourceName == source_name )
+		if i > -1:
+			cur_scene_item_id = scene_item_list[i].sceneItemId
+			cur_scene_name = cur_scene.sceneName
+			break
 
 ## Handles clip started event
 func _on_clip_started() -> void:
 	# Restart the media timer with a slower rate now that we are only checkng
 	# for bad or missed state changes
+	if cur_scene_item_id <= 0.0 or cur_scene_name == "":
+		await find_scene_and_source_id()
+	#turn off scale filter
+	obs.set_source_filter_enabled(source_name,source_filter_name,false)
+	await obs.source_filter_enabled
+	obs.get_scene_item_transform(cur_scene_name, cur_scene_item_id)
+	var transform  = await obs.got_scene_item_transform
+	cur_clip_ratio = transform.sourceWidth / transform.sourceHeight
+	obs.set_source_filter_enabled(source_name,source_filter_name,true)
+	await obs.source_filter_enabled
 	%OBSMediaTimer.start(1.0)
 	clip_initial_size_set = false
 	clip_resizing = obs_scale
@@ -269,24 +295,33 @@ func animate_scale(delta: float) -> void:
 		scale_source(cur_size.x, cur_size.y)
 		clip_initial_size_set = true
 		return
+	
+	var maxWidth = max_size.x
+	var maxHeight = max_size.y
+	if cur_clip_ratio >= 1:
+		maxHeight = maxWidth / cur_clip_ratio
+	else:
+		maxWidth = maxHeight * cur_clip_ratio
+		
+	
 	# if we have reached the maximum size, stop animating
-	if cur_size.x >= max_size.x and cur_size.y >= max_size.y:
+	if cur_size.x >= maxWidth and cur_size.y >= maxHeight:
 		resize_time_elapsed = 0.0
 		clip_resizing = false
 		return
 	# keep track of the total time spent on the resize animation
 	resize_time_elapsed += delta
 	# calculate the new size based on the elapsed time
-	if cur_size.x < max_size.x:
+	if cur_size.x < maxWidth:
 		var progress_ratio = resize_time_elapsed / time_to_scale
-		cur_size.x = min_size.x + ((max_size.x - min_size.x) * progress_ratio)
-		if cur_size.x > max_size.x:
-			cur_size.x = max_size.x
-	if cur_size.y < max_size.y:
+		cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
+		if cur_size.x > maxWidth:
+			cur_size.x = maxWidth
+	if cur_size.y < maxHeight:
 		var progress_ratio = resize_time_elapsed / time_to_scale
-		cur_size.y = min_size.y + ((max_size.y - min_size.y) * progress_ratio)
-		if cur_size.y > max_size.y:
-			cur_size.y = max_size.y
+		cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
+		if cur_size.y > maxHeight:
+			cur_size.y = maxHeight
 	# scale the source to the new size
 	scale_source(cur_size.x, cur_size.y)
 

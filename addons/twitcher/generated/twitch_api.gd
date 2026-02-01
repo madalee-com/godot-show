@@ -1130,10 +1130,8 @@ func create_clip(opt: TwitchCreateClip.Opt, broadcaster_id: String) -> TwitchCre
 	var path = "/clips?"
 	var optionals: Dictionary[StringName, Variant] = {}
 	if opt != null: optionals = opt.to_dict()
-	if optionals.has("duration"):
-		path += "duration=" + str(optionals.duration) + "&"
-	if optionals.has("title"):
-		path += "title=" + str(optionals.title) + "&"
+	if optionals.has("has_delay"):
+		path += "has_delay=" + str(optionals.has_delay) + "&"
 	path += "broadcaster_id=" + str(broadcaster_id) + "&"
 	
 	var response: BufferedHTTPClient.ResponseData = await request(path, HTTPClient.METHOD_POST, "", "")
@@ -1195,35 +1193,6 @@ func get_clips(opt: TwitchGetClips.Opt) -> TwitchGetClips.Response:
 		if not opt: opt = TwitchGetClips.Opt.new()
 		opt.after = cursor
 		parsed_result._next_page = get_clips.bind(opt)
-	
-	return parsed_result
-
-
-## NEW Provides URLs to download the video file(s) for the specified clips.
-## 
-## editor_id - The User ID of the editor for the channel you want to download a clip for. If using the broadcaster’s auth token, this is the same as `broadcaster_id`. This must match the `user_id` in the user access token. 
-## broadcaster_id - The ID of the broadcaster you want to download clips for. 
-## clip_id - The ID that identifies the clip you want to download. Include this parameter for each clip you want to download, up to a maximum of 10 clips. For example, `clip_id=SleepyGiftedPeppermintNerfRedBlaster-KbkBXYt3lOk3jy8-&clip_id=WimpyAltruisticKleeKeyboardCat-EiY5yMrEwZ4i4gwC`. 
-##
-## https://dev.twitch.tv/docs/api/reference#get-clips-download
-func get_clips_download(clip_id: Array[String], editor_id: String, broadcaster_id: String) -> TwitchGetClipsDownload.Response:
-	var path = "/clips/downloads?"
-	
-	for param in clip_id:
-		path += "clip_id=" + str(param) + "&" 
-	path += "editor_id=" + str(editor_id) + "&"
-	path += "broadcaster_id=" + str(broadcaster_id) + "&"
-	
-	var response: BufferedHTTPClient.ResponseData = await request(path, HTTPClient.METHOD_GET, "", "")
-
-	var result: Variant = {}
-	if response.response_code >= 400: 
-		_handle_error("get_clips_download", response)
-	else:
-		result = JSON.parse_string(response.response_data.get_string_from_utf8())
-		
-	var parsed_result: TwitchGetClipsDownload.Response = TwitchGetClipsDownload.Response.from_json(result)
-	parsed_result.response = response
 	
 	return parsed_result
 
@@ -3697,31 +3666,6 @@ func update_user(opt: TwitchUpdateUser.Opt) -> TwitchUpdateUser.Response:
 		result = JSON.parse_string(response.response_data.get_string_from_utf8())
 		
 	var parsed_result: TwitchUpdateUser.Response = TwitchUpdateUser.Response.from_json(result)
-	parsed_result.response = response
-	
-	return parsed_result
-
-
-## NEW Gets the authorization scopes that the specified user has granted the application.
-## 
-## user_id - The ID of the user(s) you want to check authorization for. To specify more than one user, include the user\_id parameter for each user to get. For example, `user_id=1234&user_id=5678`. The maximum number of IDs you may specify is 10. 
-##
-## https://dev.twitch.tv/docs/api/reference#get-authorization-by-user
-func get_authorization_by_user(user_id: Array[String]) -> TwitchGetAuthorizationByUser.Response:
-	var path = "/authorization/users?"
-	
-	for param in user_id:
-		path += "user_id=" + str(param) + "&" 
-	
-	var response: BufferedHTTPClient.ResponseData = await request(path, HTTPClient.METHOD_GET, "", "")
-
-	var result: Variant = {}
-	if response.response_code >= 400: 
-		_handle_error("get_authorization_by_user", response)
-	else:
-		result = JSON.parse_string(response.response_data.get_string_from_utf8())
-		
-	var parsed_result: TwitchGetAuthorizationByUser.Response = TwitchGetAuthorizationByUser.Response.from_json(result)
 	parsed_result.response = response
 	
 	return parsed_result
