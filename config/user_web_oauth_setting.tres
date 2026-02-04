@@ -10,4 +10,4 @@ authorization_url = "https://id.twitch.tv/oauth2/authorize"
 device_authorization_url = "https://id.twitch.tv/oauth2/device"
 cache_file = "user://auth.conf"
 client_id = "0n8y8pt9jjdo4nht9lw8yya3uziq18"
-authorization_flow = 2
+authorization_flow = 1
