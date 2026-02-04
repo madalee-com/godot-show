@@ -2,5 +2,5 @@
 .godot/
 /android/
 config/twitch_oauth_setting.tres
-/exports
+/build
 /config/rewards/*
