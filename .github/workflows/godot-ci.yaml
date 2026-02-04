@@ -9,8 +9,8 @@ env:
   PROJECT_PATH: .
 
 jobs:
-  export-windows:
-    name: Windows Export
+  export-win64:
+    name: Windows x64 Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
       image: barichello/godot-ci:4.6
@@ -25,20 +25,20 @@ jobs:
           mkdir -v -p ~/.config/
           mv /root/.config/godot ~/.config/godot
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-      - name: Windows Build
+      - name: Windows x64 Build
         run: |
-          mkdir -v -p build/windows
+          mkdir -v -p build/win64
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
-          godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/$EXPORT_NAME_win64.exe"
+          godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/win64/$EXPORT_NAME_win64.exe"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: build/windows
+          name: win64
+          path: build/win64
 
-  export-linux:
-    name: Linux Export
+  export-linux_x86_x64:
+    name: Linux x86/x64 Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
       image: barichello/godot-ci:4.6
@@ -51,17 +51,17 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-      - name: Linux Build
+      - name: Linux x86/x64 Build
         run: |
-          mkdir -v -p build/linux
+          mkdir -v -p build/linux_x86_x64
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
-          godot --headless --verbose --export-release "Linux/X11" "$EXPORT_DIR/$EXPORT_NAME_linux.x86_64"
+          godot --headless --verbose --export-release "Linux" "$EXPORT_DIR/linux_x86_x64/$EXPORT_NAME_linux.x86_64"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux
-          path: build/linux
+          name: linux_x86_x64
+          path: build/linux_x86_x64
 
   export-web:
     name: Web Export
@@ -79,7 +79,7 @@ jobs:
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
       - name: Web Build
         run: |
-          mkdir -v -p build/web
+          mkdir -v -p build/Godot-Show_web
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "Web" "$EXPORT_DIR/Godot-Show_web/index.html"
@@ -87,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: web
-          path: build/web
+          path: build/Godot-Show_web
       - name: Install rsync 📚
         run: |
           apt-get update && apt-get install -y rsync
@@ -95,10 +95,10 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@releases/v4
         with:
           branch: gh-pages # The branch the action should deploy to.
-          folder: build/web # The folder the action should deploy.
+          folder: build/Godot-Show_web # The folder the action should deploy.
 
   export-mac:
-    name: Mac Export
+    name: MacOS Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
       image: barichello/godot-ci:4.6
@@ -111,14 +111,14 @@ jobs:
         run: |
           mkdir -v -p ~/.local/share/godot/export_templates/
           mv /root/.local/share/godot/export_templates/${GODOT_VERSION}.stable ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
-      - name: Mac Build
+      - name: MacOS Build
         run: |
-          mkdir -v -p build/mac
+          mkdir -v -p build/macos
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
           godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/$EXPORT_NAME_macos.zip"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mac
-          path: build/mac
+          name: macos
+          path: build/macos
