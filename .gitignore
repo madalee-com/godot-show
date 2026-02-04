@@ -1,6 +1,0 @@
-# Godot 4+ specific ignores
-.godot/
-/android/
-config/twitch_oauth_setting.tres
-/build
-/config/rewards/*
