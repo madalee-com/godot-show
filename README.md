@@ -126,9 +126,9 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Only lets broadcaster !so
 - [x] Only works at the configured ratio
 - [x] Some code cleanup and robustness adding
-- [ ] Setup CI
+- [x] Setup CI
 - [x] Add a "hey you want me to setup OBS for you?" dialog
-- [ ] Cleanup errors and behaviors on initial setup
+- [x] Cleanup errors and behaviors on initial setup
 - [ ] Add more animation options, such as "inflate" mode
 - [ ] Play a sound when growing
 - [ ] Option to avoid clip replays
