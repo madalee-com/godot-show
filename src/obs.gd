@@ -32,42 +32,37 @@ const MediaInputStates := {
 
 ## Signals
 ## Emitted when input settings have been successfully set
-signal input_settings_set
+signal input_settings_set(event_data)
 ## Emitted when source filter has been successfully enabled
-signal source_filter_enabled
+signal source_filter_enabled(event_data)
 ## Emitted when media input playback starts
-signal media_input_playback_started(event_data: Dictionary)
+signal media_input_playback_started(event_data)
 ## Emitted when media input playback ends
-signal media_input_playback_ended(event_data: Dictionary)
+signal media_input_playback_ended(event_data)
 ## Emitted when source filter settings have been successfully set
-signal source_filter_settings_set
-## Emitted when there is an error setting input settings
-signal set_input_settings_error
-## Emitted when there is an error enabling source filter
-signal source_filter_enable_error
-## Emitted when there is an error getting source filter
-signal get_source_filter_error
-## Emitted when there is an error setting source filter settings
-signal source_filter_settings_error
+signal source_filter_settings_set(event_data)
 ## Emitted when source filter data is received
-signal got_source_filter
+signal got_source_filter(event_data)
 ## Emitted when media input status is received
-signal got_media_input_status(media_state, media_duration, media_cursor)
+signal got_media_input_status(event_data)
 ## Emitted when input settings are received
-signal got_input_settings(input_settings: Dictionary)
+signal got_input_settings(event_data)
 ## Emitted when default input settings are received
-signal got_input_default_settings(input_settings: Dictionary)
+signal got_input_default_settings(event_data)
 ## Emitted when a scene item transform changes
 signal scene_item_transform_changed(event_data: Dictionary)
-
-signal got_scene_item_id(scene_item_id: float)
-
-signal got_scene_item_transform(data: Dictionary)
-
-signal got_scene_list(data: Dictionary)
-
-signal got_scene_item_list(scene_item_list: Array)
-
+## Emitted when scene item ID is received
+signal got_scene_item_id(event_data)
+## Emitted when scene item transform data is received
+signal got_scene_item_transform(event_data)
+## Emitted when scene list is received
+signal got_scene_list(event_data)
+## Emitted when scene item list is received
+signal got_scene_item_list(event_data)
+## Emitted when a new input is created
+signal created_input(event_data)
+## Emitted when a new source filter is created
+signal created_source_filter(event_data)
 
 ## Logger instance
 @onready var logger = %AppLogger
@@ -80,31 +75,35 @@ var obs_connected = false
 var obs_disconnected = false
 ## Time in seconds between OBS connection retries
 var obs_retry_time = 1.0
+var obs_web_socket_note_shown = false
 
 
 ## Called when the connection to OBS is established
 func _on_connection_established() -> void:
 	if password == null or password == "":
-		obs_connected = true
-		obs_disconnected = false
-		logger.log_success("Connection to OBS established")
+		set_obs_connected()
 
 
 ## Called when the connection to OBS is authenticated
 func _on_connection_authenticated() -> void:
 	if password != null and password != "":
-		obs_connected = true
-		obs_disconnected = false
-		logger.log_success("Connection to OBS established")
+		set_obs_connected()
 
 
 ## Called when the connection to OBS is closed
-## This will attempt to re-establish the connection after a delay.
 func _on_connection_closed() -> void:
+	%SetupOBS.show()
 	obs_connected = false
+
 	if not obs_disconnected:
 		logger.log_warn("OBS connection closed, will re-attempt each second until reconnected.")
 		obs_disconnected = true
+	else:
+		if !obs_web_socket_note_shown:
+			%OBSWebsocketPanel.popup_centered()
+			%OBSWebsocketPanel.popup_window = false
+			%OBSWebsocketPanel.exclusive = true
+			obs_web_socket_note_shown = true
 	await get_tree().create_timer(obs_retry_time).timeout
 	establish_connection()
 
@@ -124,41 +123,86 @@ func _on_data_received(data: ServerObsMessage) -> void:
 					scene_item_transform_changed.emit(event.event_data)
 		self.OpCodeEnums.WebSocketOpCode.RequestResponse.IDENTIFIER_VALUE:
 			var resp: RequestResponse = data
+			var success = false
 			if resp["d"].requestStatus.result:
-				match resp.request_type:
-					"SetInputSettings":
-						input_settings_set.emit()
-					"SetSourceFilterEnabled":
-						source_filter_enabled.emit()
-					"SetSourceFilterSettings":
-						source_filter_settings_set.emit()
-					"GetInputDefaultSettings":
+				success = true
+			match resp.request_type:
+				"SetInputSettings":
+					if success:
+						input_settings_set.emit(true)
+					else:
+						input_settings_set.emit(false)
+				"SetSourceFilterEnabled":
+					if success:
+						source_filter_enabled.emit(true)
+					else:
+						source_filter_enabled.emit(false)
+				"SetSourceFilterSettings":
+					if success:
+						source_filter_settings_set.emit(true)
+					else:
+						source_filter_settings_set.emit(false)
+				"GetInputDefaultSettings":
+					if success:
 						got_input_default_settings.emit(resp["d"])
-					"GetInputSettings":
+					else:
+						got_input_default_settings.emit(false)
+				"GetInputSettings":
+					if success:
 						got_input_settings.emit(resp["d"])
-					"GetSourceFilter":
-						got_source_filter.emit(resp["d"].responseData.sceneItems)
-					"GetSceneList":
+					else:
+						got_input_settings.emit(false)
+				"GetSourceFilter":
+					if success:
+						got_source_filter.emit(resp["d"].responseData)
+					else:
+						got_source_filter.emit(false)
+				"GetSceneList":
+					if success:
 						got_scene_list.emit(resp["d"].responseData.scenes)
-					"GetSceneItemList":
+					else:
+						got_scene_list.emit(false)
+				"GetSceneItemList":
+					if success:
 						got_scene_item_list.emit(resp["d"].responseData.sceneItems)
-					"GetSceneItemId":
+					else:
+						got_scene_item_list.emit(false)
+				"GetSceneItemId":
+					if success:
 						got_scene_item_id.emit(resp["d"].responseData.sceneItemId)
-					"GetSceneItemTransform":
+					else:
+						got_scene_item_id.emit(false)
+				"GetSceneItemTransform":
+					if success:
 						got_scene_item_transform.emit(resp["d"].responseData.sceneItemTransform)
-					"GetMediaInputStatus":
-						got_media_input_status.emit(resp["d"].responseData.mediaState, resp["d"].responseData.mediaDuration, resp["d"].responseData.mediaCursor)
-			else:
-				logger.log("Got error from OBS: %s" % resp["d"].requestStatus.comment)
-				match resp.request_type:
-					"SetInputSettings":
-						set_input_settings_error.emit()
-					"SetSourceFilterEnabled":
-						source_filter_enable_error.emit()
-					"SetSourceFilterSettings":
-						source_filter_settings_error.emit()
-					"GetSourceFilter":
-						get_source_filter_error.emit()
+					else:
+						got_scene_item_transform.emit(false)
+				"GetMediaInputStatus":
+					if success:
+						got_media_input_status.emit(resp["d"].responseData)
+					else:
+						got_media_input_status.emit(false)
+				"CreateInput":
+					if success:
+						created_input.emit(resp["d"].responseData)
+					else:
+						created_input.emit(false)
+				"CreateSourceFilter":
+					if success:
+						created_source_filter.emit(true)
+					else:
+						created_source_filter.emit(false)
+
+
+## Sets the OBS connected state to true and performs related actions.
+## This function is called when the connection to OBS is established or authenticated.
+func set_obs_connected():
+	obs_connected = true
+	obs_disconnected = false
+	## Hide the OBS Websocket panel and SetupOBS panel.
+	%OBSWebsocketPanel.hide()
+	%SetupOBS.hide()
+	logger.log_success("Connection to OBS established")
 
 
 ## Enables the OBS connection, with logging
@@ -277,9 +321,10 @@ func get_media_input_status(source_name: String):
 	)
 
 
-## 
+## Retrieves the ID of a scene item in OBS.
 ##
-## 
+## @param scene_name The name of the scene containing the item.
+## @param source_name The name of the source item within the scene.
 func get_scene_item_id(scene_name: String, source_name: String):
 	send_command(
 		"GetSceneItemId",
@@ -290,9 +335,11 @@ func get_scene_item_id(scene_name: String, source_name: String):
 		UUIDUtil.v7(),
 	)
 
-## 
+
+## Retrieves the transform properties of a scene item in OBS.
 ##
-## 
+## @param scene_name The name of the scene containing the item.
+## @param scene_item_id The ID of the scene item within the scene.
 func get_scene_item_transform(scene_name: String, scene_item_id: float):
 	send_command(
 		"GetSceneItemTransform",
@@ -303,22 +350,59 @@ func get_scene_item_transform(scene_name: String, scene_item_id: float):
 		UUIDUtil.v7(),
 	)
 
-## 
-##
-## 
+
+## Retrieves the list of scenes in OBS.
 func get_scene_list():
 	send_command(
 		"GetSceneList",
 	)
 
 
-## 
+## Retrieves the list of scene items in a specific scene in OBS.
 ##
-## 
+## @param scene_name The name of the scene to retrieve items from.
 func get_scene_item_list(scene_name: String):
 	send_command(
 		"GetSceneItemList",
 		{
 			"sceneName": scene_name,
-		}
+		},
+	)
+
+
+## Creates a new media input source for a specific scene item.
+##
+## @param scene_name The name of the scene to add an input to.
+## @param source_name The name of the source that will be used as the input in OBS.
+func create_media_input(scene_name: String, source_name: String):
+	send_command(
+		"CreateInput",
+		{
+			"sceneName": scene_name,
+			"inputName": source_name,
+			"inputKind": "ffmpeg_source",
+			"inputSettings": {
+				"is_local_file": false,
+				"clear_on_media_end": false,
+				"restart_on_activate": false,
+			},
+			"sceneItemEnabled": true,
+		},
+	)
+
+
+## Creates a new filter for an existing source in OBS.
+##
+## @param source_name The name of the source to add a filter to.
+## @param filter_name The desired name for the new filter.
+## @param filter_kind The kind of filter to create (e.g., "image", "color_correction").
+func create_source_filter(source_name: String, filter_name: String, filter_kind: String):
+	## Send a command to OBS to create a new filter on the specified source.
+	send_command(
+		"CreateSourceFilter",
+		{
+			"sourceName": source_name,
+			"filterName": filter_name,
+			"filterKind": filter_kind,
+		},
 	)

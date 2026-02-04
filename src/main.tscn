@@ -4,11 +4,15 @@
 [ext_resource type="PackedScene" uid="uid://dopnaxau01v7i" path="res://src/app_logger.tscn" id="4_1bvp3"]
 [ext_resource type="Script" uid="uid://bu7y6oldpgjs7" path="res://src/obs.gd" id="5_lquwl"]
 [ext_resource type="Texture2D" uid="uid://coqqngn5lnnkg" path="res://assets/images/godot-show-screen-tight-32.png" id="6_7mycd"]
+[ext_resource type="Texture2D" uid="uid://cxmcra6j5cedi" path="res://assets/images/OBS_Studio_logo.png" id="6_srxbw"]
 [ext_resource type="Script" uid="uid://bmluckfvgm1c2" path="res://addons/twitcher/chat/twitch_command.gd" id="7_kek77"]
 [ext_resource type="Script" uid="uid://nq4gxdgeqma6" path="res://src/commands.gd" id="9_4c57u"]
 [ext_resource type="Script" uid="uid://dm1apswc4ut2x" path="res://src/about_panel.gd" id="9_efxa6"]
 [ext_resource type="FontVariation" uid="uid://d1xpl5r7veloj" path="res://assets/gui/title_font.tres" id="10_dg77c"]
 [ext_resource type="Texture2D" uid="uid://i5d3ouv4d5qr" path="res://assets/images/godot-show-screen-tight-128.png" id="10_efxa6"]
+[ext_resource type="Script" uid="uid://itmkxbgv8bv7" path="res://src/obs_config_panel.gd" id="10_kqbth"]
+[ext_resource type="Texture2D" uid="uid://d11puphn86osx" path="res://assets/images/obs-websocket-screen.png" id="10_mgm53"]
+[ext_resource type="Script" uid="uid://8y2ph6qd5470" path="res://src/obs_websocket_panel.gd" id="10_uewes"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_kek77"]
 content_margin_left = 18.0
@@ -24,7 +28,19 @@ spacing_top = -12
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_efxa6"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_srxbw"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+draw_center = false
+
+[sub_resource type="Theme" id="Theme_d3u4l"]
+RichTextLabel/constants/line_separation = 3
+RichTextLabel/styles/normal = SubResource("StyleBoxFlat_srxbw")
+
 [node name="Main" type="Control" unique_id=477603033]
+top_level = true
 custom_minimum_size = Vector2(465, 408)
 layout_mode = 3
 anchors_preset = 15
@@ -34,7 +50,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_h2yge")
 
-[node name="BoxContainer" type="BoxContainer" parent="." unique_id=193416873]
+[node name="MainContainer" type="BoxContainer" parent="." unique_id=193416873]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -43,43 +59,43 @@ grow_horizontal = 2
 grow_vertical = 2
 vertical = true
 
-[node name="TabContainer" type="TabContainer" parent="BoxContainer" unique_id=146571510]
+[node name="TabContainer" type="TabContainer" parent="MainContainer" unique_id=146571510]
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
 
-[node name="Home" type="VBoxContainer" parent="BoxContainer/TabContainer" unique_id=1975399472]
+[node name="Home" type="VBoxContainer" parent="MainContainer/TabContainer" unique_id=1975399472]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="BoxContainer/TabContainer/Home" unique_id=333858883]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/TabContainer/Home" unique_id=333858883]
 layout_mode = 2
 
-[node name="TwitchConnect" type="Button" parent="BoxContainer/TabContainer/Home/HBoxContainer" unique_id=301890936]
+[node name="TwitchConnect" type="Button" parent="MainContainer/TabContainer/Home/HBoxContainer" unique_id=301890936]
 layout_mode = 2
 text = "Connect to Twitch"
 
-[node name="AutoConnect" type="CheckButton" parent="BoxContainer/TabContainer/Home/HBoxContainer" unique_id=1472931061]
+[node name="AutoConnect" type="CheckButton" parent="MainContainer/TabContainer/Home/HBoxContainer" unique_id=1472931061]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Connect on Startup"
 
-[node name="Control" type="Control" parent="BoxContainer/TabContainer/Home/HBoxContainer" unique_id=1811661823]
+[node name="Control" type="Control" parent="MainContainer/TabContainer/Home/HBoxContainer" unique_id=1811661823]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ForgetTwitchLogin" type="Button" parent="BoxContainer/TabContainer/Home/HBoxContainer" unique_id=243853028]
+[node name="ForgetTwitchLogin" type="Button" parent="MainContainer/TabContainer/Home/HBoxContainer" unique_id=243853028]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "Forget Twitch Login"
 flat = true
 
-[node name="AppLogger" parent="BoxContainer/TabContainer/Home" unique_id=128935556 instance=ExtResource("4_1bvp3")]
+[node name="AppLogger" parent="MainContainer/TabContainer/Home" unique_id=128935556 instance=ExtResource("4_1bvp3")]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Settings" type="ScrollContainer" parent="BoxContainer/TabContainer" unique_id=1659897260]
+[node name="Settings" type="ScrollContainer" parent="MainContainer/TabContainer" unique_id=1659897260]
 visible = false
 layout_mode = 2
 follow_focus = true
@@ -87,45 +103,45 @@ draw_focus_border = true
 horizontal_scroll_mode = 0
 metadata/_tab_index = 1
 
-[node name="GridContainer" type="GridContainer" parent="BoxContainer/TabContainer/Settings" unique_id=1887295277]
+[node name="GridContainer" type="GridContainer" parent="MainContainer/TabContainer/Settings" unique_id=1887295277]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Spacer" type="Control" parent="BoxContainer/TabContainer/Settings/GridContainer" unique_id=346486572]
+[node name="Spacer" type="Control" parent="MainContainer/TabContainer/Settings/GridContainer" unique_id=346486572]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="HFlowContainer" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer" unique_id=47053043]
+[node name="HFlowContainer" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer" unique_id=47053043]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 
-[node name="OBSConnectionInfoContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer" unique_id=648539628]
+[node name="OBSConnectionInfoContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer" unique_id=648539628]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer" unique_id=1894154169]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer" unique_id=1894154169]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "OBS Connection Info"
 
-[node name="ObsConnectionInfo" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer" unique_id=169275990]
+[node name="ObsConnectionInfo" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer" unique_id=169275990]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo" unique_id=1250707456]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo" unique_id=1250707456]
 layout_mode = 2
 
-[node name="HFlowContainer" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer" unique_id=323682387]
+[node name="HFlowContainer" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer" unique_id=323682387]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer" unique_id=1272837185]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer" unique_id=1272837185]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Hostname"
 horizontal_alignment = 2
 
-[node name="ObsHost" type="LineEdit" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer" unique_id=596465926]
+[node name="ObsHost" type="LineEdit" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer" unique_id=596465926]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -135,16 +151,16 @@ emoji_menu_enabled = false
 backspace_deletes_composite_character_enabled = true
 select_all_on_focus = true
 
-[node name="HFlowContainer2" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer" unique_id=676543725]
+[node name="HFlowContainer2" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer" unique_id=676543725]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2" unique_id=1775792581]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2" unique_id=1775792581]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Port"
 horizontal_alignment = 2
 
-[node name="ObsPort" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2" unique_id=1818400797]
+[node name="ObsPort" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2" unique_id=1818400797]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -153,16 +169,16 @@ value = 4455.0
 rounded = true
 select_all_on_focus = true
 
-[node name="HFlowContainer3" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer" unique_id=1473354935]
+[node name="HFlowContainer3" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer" unique_id=1473354935]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3" unique_id=189661837]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3" unique_id=189661837]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Password"
 horizontal_alignment = 2
 
-[node name="ObsPassword" type="LineEdit" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3" unique_id=2133808849]
+[node name="ObsPassword" type="LineEdit" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3" unique_id=2133808849]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -174,31 +190,31 @@ clear_button_enabled = true
 select_all_on_focus = true
 secret = true
 
-[node name="OBSSourceSettingsContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer" unique_id=1864543456]
+[node name="OBSSourceSettingsContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer" unique_id=1864543456]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer" unique_id=1714309230]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer" unique_id=1714309230]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "OBS Source Setting"
 
-[node name="ObsSourceSettings" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer" unique_id=79058857]
+[node name="ObsSourceSettings" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer" unique_id=79058857]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings" unique_id=930347443]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings" unique_id=930347443]
 layout_mode = 2
 
-[node name="HFlowContainer" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer" unique_id=655719957]
+[node name="HFlowContainer" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer" unique_id=655719957]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer" unique_id=834730901]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer" unique_id=834730901]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "Source Name"
 horizontal_alignment = 2
 
-[node name="ObsSourceName" type="LineEdit" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer" unique_id=1324570579]
+[node name="ObsSourceName" type="LineEdit" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer" unique_id=1324570579]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -208,16 +224,16 @@ emoji_menu_enabled = false
 backspace_deletes_composite_character_enabled = true
 select_all_on_focus = true
 
-[node name="HFlowContainer2" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer" unique_id=1492863673]
+[node name="HFlowContainer2" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer" unique_id=1492863673]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer2" unique_id=75534226]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer2" unique_id=75534226]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "Scaling Filter Name"
 horizontal_alignment = 2
 
-[node name="ObsScaleFilterName" type="LineEdit" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer2" unique_id=2022377842]
+[node name="ObsScaleFilterName" type="LineEdit" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer2" unique_id=2022377842]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -227,16 +243,16 @@ emoji_menu_enabled = false
 backspace_deletes_composite_character_enabled = true
 select_all_on_focus = true
 
-[node name="HFlowContainer5" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer" unique_id=906123302]
+[node name="HFlowContainer5" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer" unique_id=906123302]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer5" unique_id=472206072]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer5" unique_id=472206072]
 custom_minimum_size = Vector2(180, 0)
 layout_mode = 2
 text = "Opacity Filter Name"
 horizontal_alignment = 2
 
-[node name="ObsOpacityFilterName" type="LineEdit" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer5" unique_id=1244824462]
+[node name="ObsOpacityFilterName" type="LineEdit" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer5" unique_id=1244824462]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -246,94 +262,94 @@ emoji_menu_enabled = false
 backspace_deletes_composite_character_enabled = true
 select_all_on_focus = true
 
-[node name="HFlowContainer2" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer" unique_id=1219084969]
+[node name="HFlowContainer2" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer" unique_id=1219084969]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 
-[node name="OBSTimingAndPermContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2" unique_id=606037081]
+[node name="OBSTimingAndPermContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2" unique_id=606037081]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="OBSPermissionsContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer" unique_id=290680783]
+[node name="OBSPermissionsContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer" unique_id=290680783]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer" unique_id=195351669]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer" unique_id=195351669]
 layout_mode = 2
 text = "Who can trigger the clip?"
 
-[node name="ObsPermissionsSettings" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer" unique_id=1789188797]
+[node name="ObsPermissionsSettings" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer" unique_id=1789188797]
 layout_mode = 2
 
-[node name="GridContainer" type="GridContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings" unique_id=1233473411]
+[node name="GridContainer" type="GridContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings" unique_id=1233473411]
 layout_mode = 2
 columns = 3
 
-[node name="CanSOViewer" type="CheckBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=84152610]
+[node name="CanSOViewer" type="CheckBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=84152610]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Everyone"
 
-[node name="CanSOVIP" type="CheckBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=1187013181]
+[node name="CanSOVIP" type="CheckBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=1187013181]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "VIPs"
 
-[node name="CanSOSub" type="CheckBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=105593279]
+[node name="CanSOSub" type="CheckBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=105593279]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Subscribers"
 
-[node name="CanSOMod" type="CheckBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=1885990559]
+[node name="CanSOMod" type="CheckBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=1885990559]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
 text = "Mods"
 
-[node name="CanSOLeadMod" type="CheckBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=902265337]
+[node name="CanSOLeadMod" type="CheckBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=902265337]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
 text = "Lead Mods"
 
-[node name="CanSOStreamer" type="CheckBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=71381473]
+[node name="CanSOStreamer" type="CheckBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer" unique_id=71381473]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
 text = "Streamer"
 
-[node name="OBSTimingSettingsContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer" unique_id=2068659464]
+[node name="OBSTimingSettingsContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer" unique_id=2068659464]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer" unique_id=527914878]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer" unique_id=527914878]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Timing Settings"
 
-[node name="ObsTimingSettings" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer" unique_id=1662618617]
+[node name="ObsTimingSettings" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer" unique_id=1662618617]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings" unique_id=374365213]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings" unique_id=374365213]
 layout_mode = 2
 
-[node name="HFlowContainer2" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=892502695]
+[node name="HFlowContainer2" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=892502695]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer2" unique_id=1576806923]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer2" unique_id=1576806923]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 text = "Time to Grow"
 horizontal_alignment = 2
 
-[node name="ScaleTime" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer2" unique_id=1263942506]
+[node name="ScaleTime" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer2" unique_id=1263942506]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -343,16 +359,16 @@ step = 0.1
 value = 2.0
 select_all_on_focus = true
 
-[node name="HFlowContainer6" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=452988910]
+[node name="HFlowContainer6" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=452988910]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer6" unique_id=1459657014]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer6" unique_id=1459657014]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 text = "Time to Fade"
 horizontal_alignment = 2
 
-[node name="FadeTime" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer6" unique_id=821358422]
+[node name="FadeTime" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer6" unique_id=821358422]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -362,16 +378,16 @@ step = 0.1
 value = 1.0
 select_all_on_focus = true
 
-[node name="HFlowContainer3" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=132649914]
+[node name="HFlowContainer3" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=132649914]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer3" unique_id=628739454]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer3" unique_id=628739454]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 text = "Framerate"
 horizontal_alignment = 2
 
-[node name="AnimationFramerate" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer3" unique_id=306003034]
+[node name="AnimationFramerate" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer3" unique_id=306003034]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -381,16 +397,16 @@ value = 60.0
 rounded = true
 select_all_on_focus = true
 
-[node name="HFlowContainer4" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=1581465862]
+[node name="HFlowContainer4" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=1581465862]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer4" unique_id=699182561]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer4" unique_id=699182561]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 text = "Delay Between Clips"
 horizontal_alignment = 2
 
-[node name="QueueDelay" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer4" unique_id=1290859170]
+[node name="QueueDelay" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer4" unique_id=1290859170]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -400,16 +416,16 @@ step = 0.1
 value = 1.0
 select_all_on_focus = true
 
-[node name="HFlowContainer5" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=762287347]
+[node name="HFlowContainer5" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer" unique_id=762287347]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer5" unique_id=1042206162]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer5" unique_id=1042206162]
 custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 text = "Delay Before Clip Clear"
 horizontal_alignment = 2
 
-[node name="ClipClearDelay" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer5" unique_id=622221716]
+[node name="ClipClearDelay" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer5" unique_id=622221716]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -419,40 +435,40 @@ step = 0.001
 value = 1.5
 select_all_on_focus = true
 
-[node name="OBSScalingSettingsContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2" unique_id=1658595995]
+[node name="OBSScalingSettingsContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2" unique_id=1658595995]
 custom_minimum_size = Vector2(400, 0)
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer" unique_id=489667253]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer" unique_id=489667253]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Animation Settings"
 
-[node name="ObsScalingSettings" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer" unique_id=2104464036]
+[node name="ObsScalingSettings" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer" unique_id=2104464036]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings" unique_id=105863396]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings" unique_id=105863396]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=880893276]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=880893276]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Minimum"
 
-[node name="PanelContainer" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=953943922]
+[node name="PanelContainer" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=953943922]
 layout_mode = 2
 
-[node name="HFlowContainer" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer" unique_id=1025714007]
+[node name="HFlowContainer" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer" unique_id=1025714007]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=148511216]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=148511216]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 text = "Width"
 horizontal_alignment = 2
 
-[node name="ClipMinWidth" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=2030168212]
+[node name="ClipMinWidth" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=2030168212]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
@@ -461,13 +477,13 @@ value = 1.0
 rounded = true
 select_all_on_focus = true
 
-[node name="Label2" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=677541893]
+[node name="Label2" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=677541893]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 text = "Height"
 horizontal_alignment = 2
 
-[node name="ClipMinHeight" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=360390288]
+[node name="ClipMinHeight" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer" unique_id=360390288]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
@@ -476,24 +492,24 @@ value = 1.0
 rounded = true
 select_all_on_focus = true
 
-[node name="Label2" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=2141999872]
+[node name="Label2" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=2141999872]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 text = "Maximum"
 
-[node name="PanelContainer2" type="PanelContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=1854128864]
+[node name="PanelContainer2" type="PanelContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=1854128864]
 layout_mode = 2
 
-[node name="HFlowContainer2" type="HFlowContainer" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2" unique_id=1916263844]
+[node name="HFlowContainer2" type="HFlowContainer" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2" unique_id=1916263844]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=1588244762]
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=1588244762]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 text = "Width"
 horizontal_alignment = 2
 
-[node name="ClipMaxWidth" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=2022809296]
+[node name="ClipMaxWidth" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=2022809296]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 9999.0
@@ -501,13 +517,13 @@ value = 800.0
 rounded = true
 select_all_on_focus = true
 
-[node name="Label2" type="Label" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=1039538129]
+[node name="Label2" type="Label" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=1039538129]
 custom_minimum_size = Vector2(70, 0)
 layout_mode = 2
 text = "Height"
 horizontal_alignment = 2
 
-[node name="ClipMaxHeight" type="SpinBox" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=1524613692]
+[node name="ClipMaxHeight" type="SpinBox" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2" unique_id=1524613692]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 9999.0
@@ -515,28 +531,28 @@ value = 450.0
 rounded = true
 select_all_on_focus = true
 
-[node name="ObsScale" type="CheckButton" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=603013367]
+[node name="ObsScale" type="CheckButton" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=603013367]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
 text = "Grow on Show"
 
-[node name="ObsFadeIn" type="CheckButton" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=1269922993]
+[node name="ObsFadeIn" type="CheckButton" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=1269922993]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
 text = "Fade In"
 
-[node name="ObsFadeOut" type="CheckButton" parent="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=560940293]
+[node name="ObsFadeOut" type="CheckButton" parent="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer" unique_id=560940293]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
 text = "Fade Out"
 
-[node name="Spacer2" type="Control" parent="BoxContainer/TabContainer/Settings/GridContainer" unique_id=1034185384]
+[node name="Spacer2" type="Control" parent="MainContainer/TabContainer/Settings/GridContainer" unique_id=1034185384]
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -560,15 +576,27 @@ unique_name_in_owner = true
 script = ExtResource("5_lquwl")
 poll_time = 0.016
 
-[node name="AboutButton" type="Button" parent="." unique_id=690291912]
+[node name="HBoxContainer" type="HBoxContainer" parent="." unique_id=1082468215]
 layout_mode = 1
-anchors_preset = -1
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -105.0
-offset_top = 2.0
-offset_right = -4.0
-offset_bottom = 37.0
+offset_left = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
+
+[node name="SetupOBS" type="Button" parent="HBoxContainer" unique_id=1416556320]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+text = "Setup OBS"
+icon = ExtResource("6_srxbw")
+icon_alignment = 2
+expand_icon = true
+
+[node name="AboutButton" type="Button" parent="HBoxContainer" unique_id=690291912]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
 text = "About"
 icon = ExtResource("6_7mycd")
 flat = true
@@ -933,34 +961,186 @@ layout_mode = 2
 size_flags_horizontal = 8
 text = "Close"
 
+[node name="OBSConfigPanel" type="PopupPanel" parent="." unique_id=1534624389]
+unique_name_in_owner = true
+oversampling_override = 1.0
+initial_position = 2
+size = Vector2i(800, 450)
+visible = true
+borderless = false
+min_size = Vector2i(800, 450)
+max_size = Vector2i(800, 450)
+script = ExtResource("10_kqbth")
+
+[node name="BoxContainer" type="BoxContainer" parent="OBSConfigPanel" unique_id=1667888711]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 788.0
+offset_bottom = 438.0
+vertical = true
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="OBSConfigPanel/BoxContainer" unique_id=121141510]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="OBSConfigPanel/BoxContainer/HBoxContainer2" unique_id=444153685]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="OBSConfigPanel/BoxContainer/HBoxContainer2/VBoxContainer" unique_id=1218884464]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_kek77")
+text = "OBS Configuration Needed"
+label_settings = SubResource("LabelSettings_ycdy4")
+horizontal_alignment = 1
+
+[node name="ConfigLabel" type="RichTextLabel" parent="OBSConfigPanel/BoxContainer/HBoxContainer2/VBoxContainer" unique_id=1068993861]
+custom_minimum_size = Vector2(400, 100)
+layout_mode = 2
+theme = SubResource("Theme_d3u4l")
+bbcode_enabled = true
+text = "In order for Godot-Show to work, OBS needs a Media Source with a couple of filters on it.  We detected some problems with that setup, and can fix it for you if you want.
+
+You can do this manually if you want, but we recommend you let us do it for you.
+If you click [b]\"Setup OBS for me\", [color=green]we will do the following[/color]:[/b]"
+fit_content = true
+
+[node name="PanelContainer" type="PanelContainer" parent="OBSConfigPanel/BoxContainer/HBoxContainer2/VBoxContainer" unique_id=336563574]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Panel" type="Panel" parent="OBSConfigPanel/BoxContainer/HBoxContainer2/VBoxContainer/PanelContainer" unique_id=1699095637]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ConfigChanges" type="RichTextLabel" parent="OBSConfigPanel/BoxContainer/HBoxContainer2/VBoxContainer/PanelContainer/Panel" unique_id=1468588262]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 100)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 2
+bbcode_enabled = true
+vertical_alignment = 1
+tab_stops = PackedFloat32Array(16)
+selection_enabled = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="OBSConfigPanel/BoxContainer" unique_id=859074907]
+layout_mode = 2
+alignment = 2
+
+[node name="SetupOBSButton" type="Button" parent="OBSConfigPanel/BoxContainer/HBoxContainer" unique_id=104196884]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Setup OBS for me"
+icon = ExtResource("6_srxbw")
+
+[node name="Control" type="Control" parent="OBSConfigPanel/BoxContainer/HBoxContainer" unique_id=1904699661]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OBSConfigClose" type="Button" parent="OBSConfigPanel/BoxContainer/HBoxContainer" unique_id=1222369472]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Close"
+
+[node name="OBSWebsocketPanel" type="PopupPanel" parent="." unique_id=951306949]
+unique_name_in_owner = true
+transparent_bg = false
+oversampling_override = 1.0
+initial_position = 2
+size = Vector2i(875, 585)
+borderless = false
+always_on_top = true
+transparent = false
+min_size = Vector2i(875, 585)
+max_size = Vector2i(875, 585)
+script = ExtResource("10_uewes")
+
+[node name="BoxContainer" type="BoxContainer" parent="OBSWebsocketPanel" unique_id=566399869]
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 866.0
+offset_bottom = 576.0
+vertical = true
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="OBSWebsocketPanel/BoxContainer" unique_id=1862786349]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="OBSWebsocketPanel/BoxContainer/HBoxContainer2" unique_id=286542602]
+custom_minimum_size = Vector2(590, 500)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("10_mgm53")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="OBSWebsocketPanel/BoxContainer/HBoxContainer2" unique_id=1334401847]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="OBSWebsocketPanel/BoxContainer/HBoxContainer2/VBoxContainer" unique_id=752174733]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_kek77")
+text = "Setup OBS"
+label_settings = SubResource("LabelSettings_ycdy4")
+horizontal_alignment = 1
+
+[node name="OBSConnectionNote" type="Label" parent="OBSWebsocketPanel/BoxContainer/HBoxContainer2/VBoxContainer" unique_id=1980040926]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+size_flags_vertical = 2
+text = "Can't connect to OBS.  Please enable OBS Websocket in OBS by clicking \"Tools\" then
+\"Web Socket Server Settings\"
+Make sure the connection settings match in Godot-Show.
+
+Godot-Show defaults to:
+Host: 127.0.0.1
+Port: 4455
+Password: password
+
+You can change these settings in the Godot-Show settings tab after clicking close."
+autowrap_mode = 3
+
+[node name="OBSNoteClose" type="Button" parent="OBSWebsocketPanel/BoxContainer/HBoxContainer2/VBoxContainer" unique_id=2144141022]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Close"
+
 [connection signal="ready" from="." to="." method="_on_ready"]
-[connection signal="pressed" from="BoxContainer/TabContainer/Home/HBoxContainer/TwitchConnect" to="." method="_on_twitch_connect_pressed"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Home/HBoxContainer/AutoConnect" to="." method="_on_auto_connect_toggled"]
-[connection signal="pressed" from="BoxContainer/TabContainer/Home/HBoxContainer/ForgetTwitchLogin" to="." method="_on_forget_twitch_login_pressed"]
-[connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer/ObsHost" to="." method="_on_obs_host_text_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2/ObsPort" to="." method="_on_obs_port_value_changed"]
-[connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3/ObsPassword" to="." method="_on_obs_password_text_changed"]
-[connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer/ObsSourceName" to="." method="_on_obs_source_name_text_changed"]
-[connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer2/ObsScaleFilterName" to="." method="_on_obs_scale_filter_name_text_changed"]
-[connection signal="text_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer5/ObsOpacityFilterName" to="." method="_on_obs_opacity_filter_name_text_changed"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOViewer" to="." method="_on_can_so_viewer_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOVIP" to="." method="_on_can_so_vip_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOSub" to="." method="_on_can_so_sub_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOMod" to="." method="_on_can_so_mod_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOLeadMod" to="." method="_on_can_so_lead_mod_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOStreamer" to="." method="_on_can_so_streamer_toggled"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer2/ScaleTime" to="." method="_on_scale_time_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer6/FadeTime" to="." method="_on_fade_time_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer3/AnimationFramerate" to="." method="_on_animation_framerate_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer4/QueueDelay" to="." method="_on_queue_delay_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer5/ClipClearDelay" to="." method="_on_clip_clear_delay_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer/ClipMinWidth" to="." method="_on_clip_min_width_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer/ClipMinHeight" to="." method="_on_clip_min_height_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2/ClipMaxWidth" to="." method="_on_clip_max_width_value_changed"]
-[connection signal="value_changed" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2/ClipMaxHeight" to="." method="_on_clip_max_height_value_changed"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/ObsScale" to="." method="_on_obs_scale_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/ObsFadeIn" to="." method="_on_obs_fade_in_toggled"]
-[connection signal="toggled" from="BoxContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/ObsFadeOut" to="." method="_on_obs_fade_out_toggled"]
+[connection signal="pressed" from="MainContainer/TabContainer/Home/HBoxContainer/TwitchConnect" to="." method="_on_twitch_connect_pressed"]
+[connection signal="toggled" from="MainContainer/TabContainer/Home/HBoxContainer/AutoConnect" to="." method="_on_auto_connect_toggled"]
+[connection signal="pressed" from="MainContainer/TabContainer/Home/HBoxContainer/ForgetTwitchLogin" to="." method="_on_forget_twitch_login_pressed"]
+[connection signal="text_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer/ObsHost" to="." method="_on_obs_host_text_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer2/ObsPort" to="." method="_on_obs_port_value_changed"]
+[connection signal="text_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSConnectionInfoContainer/ObsConnectionInfo/VBoxContainer/HFlowContainer3/ObsPassword" to="." method="_on_obs_password_text_changed"]
+[connection signal="text_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer/ObsSourceName" to="." method="_on_obs_source_name_text_changed"]
+[connection signal="text_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer2/ObsScaleFilterName" to="." method="_on_obs_scale_filter_name_text_changed"]
+[connection signal="text_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer/OBSSourceSettingsContainer/ObsSourceSettings/VBoxContainer/HFlowContainer5/ObsOpacityFilterName" to="." method="_on_obs_opacity_filter_name_text_changed"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOViewer" to="." method="_on_can_so_viewer_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOVIP" to="." method="_on_can_so_vip_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOSub" to="." method="_on_can_so_sub_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOMod" to="." method="_on_can_so_mod_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOLeadMod" to="." method="_on_can_so_lead_mod_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSPermissionsContainer/ObsPermissionsSettings/GridContainer/CanSOStreamer" to="." method="_on_can_so_streamer_toggled"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer2/ScaleTime" to="." method="_on_scale_time_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer6/FadeTime" to="." method="_on_fade_time_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer3/AnimationFramerate" to="." method="_on_animation_framerate_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer4/QueueDelay" to="." method="_on_queue_delay_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSTimingAndPermContainer/OBSTimingSettingsContainer/ObsTimingSettings/VBoxContainer/HFlowContainer5/ClipClearDelay" to="." method="_on_clip_clear_delay_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer/ClipMinWidth" to="." method="_on_clip_min_width_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer/HFlowContainer/ClipMinHeight" to="." method="_on_clip_min_height_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2/ClipMaxWidth" to="." method="_on_clip_max_width_value_changed"]
+[connection signal="value_changed" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/PanelContainer2/HFlowContainer2/ClipMaxHeight" to="." method="_on_clip_max_height_value_changed"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/ObsScale" to="." method="_on_obs_scale_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/ObsFadeIn" to="." method="_on_obs_fade_in_toggled"]
+[connection signal="toggled" from="MainContainer/TabContainer/Settings/GridContainer/HFlowContainer2/OBSScalingSettingsContainer/ObsScalingSettings/VBoxContainer/ObsFadeOut" to="." method="_on_obs_fade_out_toggled"]
 [connection signal="bad_clip_state" from="Commands" to="Commands" method="_on_bad_clip_state"]
 [connection signal="clip_ended" from="Commands" to="Commands" method="_on_clip_ended"]
 [connection signal="clip_started" from="Commands" to="Commands" method="_on_clip_started"]
@@ -971,11 +1151,12 @@ text = "Close"
 [connection signal="connection_established" from="Obs" to="Obs" method="_on_connection_established"]
 [connection signal="data_received" from="Obs" to="Obs" method="_on_data_received"]
 [connection signal="got_media_input_status" from="Obs" to="Commands" method="_on_obs_got_media_input_status"]
-[connection signal="got_scene_item_id" from="Obs" to="Commands" method="_on_obs_got_scene_item_id"]
 [connection signal="input_settings_set" from="Obs" to="Commands" method="_on_obs_input_settings_set"]
 [connection signal="media_input_playback_ended" from="Obs" to="Commands" method="_on_obs_media_input_playback_ended"]
-[connection signal="set_input_settings_error" from="Obs" to="Commands" method="_on_obs_set_input_settings_error"]
-[connection signal="source_filter_settings_error" from="Obs" to="Commands" method="_on_source_filter_settings_error"]
-[connection signal="pressed" from="AboutButton" to="." method="_on_about_button_pressed"]
+[connection signal="pressed" from="HBoxContainer/SetupOBS" to="." method="_on_setup_obs_pressed"]
+[connection signal="pressed" from="HBoxContainer/AboutButton" to="." method="_on_about_button_pressed"]
 [connection signal="ready" from="AboutPanel" to="AboutPanel" method="_on_ready"]
 [connection signal="pressed" from="AboutPanel/BoxContainer/HBoxContainer/AboutClose" to="AboutPanel" method="_on_about_close_pressed"]
+[connection signal="pressed" from="OBSConfigPanel/BoxContainer/HBoxContainer/SetupOBSButton" to="Commands" method="_on_setup_obs_button_pressed"]
+[connection signal="pressed" from="OBSConfigPanel/BoxContainer/HBoxContainer/OBSConfigClose" to="OBSConfigPanel" method="_on_obs_config_close_pressed"]
+[connection signal="pressed" from="OBSWebsocketPanel/BoxContainer/HBoxContainer2/VBoxContainer/OBSNoteClose" to="OBSWebsocketPanel" method="_on_obs_note_close_pressed"]

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://i8st3lv0lidh" path="res://addons/twitcher/twitch_service.gd" id="1_bfhdh"]
 [ext_resource type="Resource" uid="uid://bf54ahxend4j0" path="res://config/user_oauth_setting.tres" id="2_oxajb"]
+[ext_resource type="Resource" uid="uid://ccj3e31ejqbhy" path="res://config/user_web_oauth_setting.tres" id="2_y8gdx"]
 [ext_resource type="Resource" uid="uid://c1yajb6gqs3u8" path="res://config/show_scopes.tres" id="3_3i13y"]
 [ext_resource type="Resource" uid="uid://m7epy882axmp" path="res://config/default_oauth_token.tres" id="4_1vs0w"]
 [ext_resource type="Script" uid="uid://cw30cwveway65" path="res://addons/twitcher/generated/twitch_api.gd" id="5_1vs0w"]
@@ -13,14 +14,14 @@
 
 [node name="Twitch" type="Node" unique_id=261275422]
 script = ExtResource("1_bfhdh")
-oauth_setting = ExtResource("2_oxajb")
+oauth_setting = ExtResource("2_y8gdx")
 scopes = ExtResource("3_3i13y")
 token = ExtResource("4_1vs0w")
 metadata/_custom_type_script = "uid://i8st3lv0lidh"
 
 [node name="TwitchAuth" type="Node" parent="." unique_id=1369163718]
 script = ExtResource("5_oxajb")
-oauth_setting = ExtResource("2_oxajb")
+oauth_setting = ExtResource("2_y8gdx")
 token = ExtResource("4_1vs0w")
 scopes = ExtResource("3_3i13y")
 metadata/_custom_type_script = "uid://iv0mgv0lu8b0"
@@ -33,13 +34,13 @@ token_handler = NodePath("../TokenHandler")
 
 [node name="TokenHandler" type="Node" parent="TwitchAuth" unique_id=1632205395]
 script = ExtResource("7_v88il")
-oauth_setting = ExtResource("2_oxajb")
+oauth_setting = ExtResource("2_y8gdx")
 token = ExtResource("4_1vs0w")
 
 [node name="TwitchAPI" type="Node" parent="." unique_id=2102304480]
 script = ExtResource("5_1vs0w")
 token = ExtResource("4_1vs0w")
-oauth_setting = ExtResource("2_oxajb")
+oauth_setting = ExtResource("2_y8gdx")
 metadata/_custom_type_script = "uid://cw30cwveway65"
 
 [node name="TwitchEventsub" type="Node" parent="." unique_id=1572144212 node_paths=PackedStringArray("api")]

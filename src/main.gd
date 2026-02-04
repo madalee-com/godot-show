@@ -25,6 +25,8 @@ var is_loading = false
 
 ## Called when the node enters the scene tree for the first time.
 func _on_ready() -> void:
+	if OS.get_name() == "Web":
+		Twitch.auth.oauth_setting.authorization_flow = OAuth.AuthorizationFlow.DEVICE_CODE_FLOW
 	## connect to logger signals
 	logger.app_logger.log_message.connect(_log_message)
 	## connect to twitch signals
@@ -376,3 +378,14 @@ func _on_can_so_streamer_toggled(_toggled_on: bool) -> void:
 		%CanSOViewer.button_pressed = false
 	refresh_so_permissions()
 	save_settings()
+
+
+func _on_setup_obs_pressed() -> void:
+	if %Obs.obs_connected:
+		%OBSConfigPanel.popup_centered()
+		%OBSConfigPanel.popup_window = false
+		%OBSConfigPanel.exclusive = true
+	else:
+		%OBSWebsocketPanel.popup_centered()
+		%OBSWebsocketPanel.popup_window = false
+		%OBSWebsocketPanel.exclusive = true

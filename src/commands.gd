@@ -80,11 +80,24 @@ var fade_time_elapsed = 0.0
 var cur_opacity = 0.0
 ## Previous state of the media input
 var last_media_state = null
-
+## Current aspect ratio of the clip
 var cur_clip_ratio = 1.0
-
-var cur_scene_item_id = 0.0
+## Current scene item ID of the clip
+var cur_scene_item_id = -1.0
+## Current scene name where the clip is displayed
 var cur_scene_name = ""
+## Whether or not the obs config popup has been shown this session
+var obs_config_popup_shown = false
+# Flag indicating whether the OBS scaling filter is available
+var has_scale_filter = false
+# Flag indicating whether the OBS fade filter is available
+var has_fade_filter = false
+# The name of the first scene encountered, used for initial configuration
+var first_scene_name = ""
+# Flag indicating whether OBS has been successfully configured
+var obs_configured = false
+# Flag indicating whether an OBS configuration error message has already been shown
+var obs_config_error_shown = false
 
 
 ## Main process function that handles frame timing and animation updates
@@ -105,7 +118,7 @@ func _process(delta: float) -> void:
 func _on_shoutout_command_received(
 		_from_username: String,
 		_info: TwitchCommandInfo,
-	args: PackedStringArray,
+		args: PackedStringArray,
 ) -> void:
 	logger.log("Shoutout triggered")
 	# Get a random clip from the specified user
@@ -148,32 +161,78 @@ func _on_clip_ended() -> void:
 		await get_tree().create_timer(queue_delay).timeout
 		process_queue()
 
-func find_scene_and_source_id():
+
+## This function finds the scene and source ID for the clip to be displayed.
+## It retrieves the scene list from OBS, then iterates through the scenes
+## to find the one that contains the source with the name 'Godot-Show'.
+## If the source is not found within a scene, it attempts to configure OBS
+## if it hasn't been configured already, and returns false.
+## The function returns true if the scene and source ID are successfully found.
+func find_scene_and_source_id() -> bool:
+	# Get the scene list from OBS
 	obs.get_scene_list()
-	var scene_list = await obs.got_scene_list
-	for cur_scene in scene_list:
-		obs.get_scene_item_list(cur_scene.sceneName)
-		var scene_item_list: Array = await obs.got_scene_item_list
-		var i = scene_item_list.find_custom(func (e): return e.sourceName == source_name )
-		if i > -1:
-			cur_scene_item_id = scene_item_list[i].sceneItemId
-			cur_scene_name = cur_scene.sceneName
-			break
+	# Wait for the scene list to be received
+	var scene_list = false
+	var tries = 0
+	# Retry up to 5 times if the scene list is not yet available
+	while typeof(scene_list) != TYPE_ARRAY and tries < 5:
+		tries += 1
+		scene_list = await obs.got_scene_list
+	# If we've tried too many times, check if OBS is configured
+	if tries >= 5:
+		check_obs_config()
+		return false
+	# Reset the scene item ID and scene name
+	cur_scene_item_id = -1.0
+	cur_scene_name = ""
+	# Try to find the source within scenes up to 5 times
+	tries = 0
+	while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+		# Iterate through each scene in the scene list
+		for cur_scene in scene_list:
+			tries += 1
+			# Get the scene item list for the current scene
+			obs.get_scene_item_list(cur_scene.sceneName)
+			# Wait for the scene item list to be received
+			var scene_item_list = await obs.got_scene_item_list
+			# Skip if the scene item list is not yet available
+			if typeof(scene_item_list) != TYPE_ARRAY:
+				continue
+			# Search for the source with the name 'Godot-Show'
+			var i = scene_item_list.find_custom(func(e): return e.sourceName == source_name)
+			# If found, set the scene item ID and scene name
+			if i > -1:
+				cur_scene_item_id = scene_item_list[i].sceneItemId
+				cur_scene_name = cur_scene.sceneName
+				return true
+	# If we didn't find the source, check if OBS is configured
+	check_obs_config()
+	return false
+
 
 ## Handles clip started event
 func _on_clip_started() -> void:
+	# Find the scene and source, incase it somehow changed
+	if await find_scene_and_source_id() == false:
+		reset_playback()
+		return
+	# Disable the scale filter so that we can get the original resolution
+	obs.set_source_filter_enabled(source_name, source_filter_name, false)
+	if (await obs.source_filter_enabled) == false:
+		return
+	# Get the transform so we know the origional display ratio
+	obs.get_scene_item_transform(cur_scene_name, cur_scene_item_id)
+	var transform = await obs.got_scene_item_transform
+	if typeof(transform) == TYPE_BOOL:
+		return
+	cur_clip_ratio = transform.sourceWidth / transform.sourceHeight
+	# Re-enable the scale filter so we can start scaling
+	obs.set_source_filter_enabled(source_name, source_filter_name, true)
+	if (await obs.source_filter_enabled == false):
+		return
+
 	# Restart the media timer with a slower rate now that we are only checkng
 	# for bad or missed state changes
-	if cur_scene_item_id <= 0.0 or cur_scene_name == "":
-		await find_scene_and_source_id()
-	#turn off scale filter
-	obs.set_source_filter_enabled(source_name,source_filter_name,false)
-	await obs.source_filter_enabled
-	obs.get_scene_item_transform(cur_scene_name, cur_scene_item_id)
-	var transform  = await obs.got_scene_item_transform
-	cur_clip_ratio = transform.sourceWidth / transform.sourceHeight
-	obs.set_source_filter_enabled(source_name,source_filter_name,true)
-	await obs.source_filter_enabled
 	%OBSMediaTimer.start(1.0)
 	clip_initial_size_set = false
 	clip_resizing = obs_scale
@@ -189,7 +248,10 @@ func _on_obs_media_input_playback_ended(event_data: Dictionary) -> void:
 
 
 ## Handles OBS input settings set event
-func _on_obs_input_settings_set() -> void:
+func _on_obs_input_settings_set(result) -> void:
+	if !result:
+		reset_playback()
+		return
 	# once we are sure that the clip has been set, we can clear it from
 	# the app
 	if current_clip == null:
@@ -200,17 +262,12 @@ func _on_obs_input_settings_set() -> void:
 	%OBSMediaTimer.start(0.05)
 
 
-## Handles OBS set input settings error
-func _on_obs_set_input_settings_error() -> void:
-	# if we fail to set the input, we need to reset state to try again
-	reset_playback()
-
-
 ## Handles source filter settings error
-func _on_source_filter_settings_error() -> void:
+func _on_source_filter_settings_set(result) -> void:
 	# if we fail to set the filter, we need to reset state so the next
 	# attempt will work
-	reset_animations()
+	if typeof(result) == TYPE_BOOL:
+		reset_animations()
 
 
 ## Check the status of the media source.
@@ -218,7 +275,11 @@ func _on_source_filter_settings_error() -> void:
 ## sends aren't truly representative of if the clip is truly playing
 func _on_obs_media_timer_timeout() -> void:
 	if obs.obs_connected:
-		obs.get_media_input_status(source_name)
+		if obs_configured:
+			obs.get_media_input_status(source_name)
+		elif %OBSMediaTimer.wait_time >= 1.0:
+			if !await check_obs_config():
+				popup_obs_config_if_needed()
 
 
 ## Handles the media input status response from OBS
@@ -232,13 +293,19 @@ func _on_obs_media_timer_timeout() -> void:
 ## @param media_state - The play state of the media input
 ## @param media_duration - The duration of the clip
 ## @param media_cursor - The cursor position of the clip
-func _on_obs_got_media_input_status(media_state, media_duration, media_cursor) -> void:
-	if media_state == null:
+func _on_obs_got_media_input_status(result) -> void:
+	if typeof(result) == TYPE_BOOL:
+		check_obs_config()
 		return
-	if media_duration == null:
-		media_duration = 0.0
-	if media_cursor == null:
-		media_cursor = 0.0
+	if result.mediaState == null:
+		return
+	var media_state = result.mediaState
+	if result.mediaDuration == null:
+		result.mediaDuration = 0.0
+	var media_duration = result.mediaDuration
+	if result.mediaCursor == null:
+		result.mediaCursor = 0.0
+	var media_cursor = result.mediaCursor
 	# Check if media is playing
 	# Even if the state says it's playing, if the media_duration is 0.0, it's not actually loaded
 	# Furthermore if the cursor isn't beyond 0.0, we can't be sure the clip is ready to actually play
@@ -295,15 +362,14 @@ func animate_scale(delta: float) -> void:
 		scale_source(cur_size.x, cur_size.y)
 		clip_initial_size_set = true
 		return
-	
+
 	var maxWidth = max_size.x
 	var maxHeight = max_size.y
 	if cur_clip_ratio >= 1:
 		maxHeight = maxWidth / cur_clip_ratio
 	else:
 		maxWidth = maxHeight * cur_clip_ratio
-		
-	
+
 	# if we have reached the maximum size, stop animating
 	if cur_size.x >= maxWidth and cur_size.y >= maxHeight:
 		resize_time_elapsed = 0.0
@@ -372,32 +438,13 @@ func process_animations(delta: float) -> void:
 	animate_fade(delta)
 
 
-## Connect to OBS if it is not already connected
-## will wait for the connection before proceeding
-func wait_obs_ready():
-	if obs.is_connected:
-		return
-	obs.enable_connect()
-	await obs.obs_authenticated
-
-
-## Checks if OBS is ready, will connect if not ready,
-## but immediately return false if not connected when called.
-## Does not wait for the connection to complete.
-func obs_ready() -> bool:
-	if obs.is_connected:
-		return true
-	obs.enable_connect()
-	return false
-
-
 ## Scales the source in OBS to the specified width and height.
 ## @param w The target width.
 ## @param h The target height.
 func scale_source(w: int, h: int):
 	if not obs_scale:
 		return
-	if obs.obs_connected:
+	if obs.obs_connected and obs_configured:
 		obs.set_source_filter_settings(
 			source_name,
 			source_filter_name,
@@ -412,7 +459,7 @@ func scale_source(w: int, h: int):
 func fade_source(opacity: float):
 	if not (fade_in or fade_out):
 		return
-	if obs.obs_connected:
+	if obs.obs_connected and obs_configured:
 		obs.set_source_filter_settings(source_name, fade_filter_name, { "opacity": opacity })
 
 
@@ -420,7 +467,7 @@ func fade_source(opacity: float):
 ##
 ## @param filter_name - The name of the filter to enable.
 func enable_source_filter(filter_name: String):
-	if obs.obs_connected:
+	if obs.obs_connected and obs_configured:
 		obs.set_source_filter_enabled(source_name, filter_name, true)
 
 
@@ -428,8 +475,11 @@ func enable_source_filter(filter_name: String):
 ## Waits for OBS to be ready before attempting to play.
 ## Does nothing if the queue is empty or if a clip is already playing.
 func process_queue():
-	# Wait for OBS to be ready before proceeding
-	await wait_obs_ready()
+	# If OBS isn't fully ready, then try again after the queue timer time
+	if !obs.obs_connected or !obs_configured:
+		await get_tree().create_timer(queue_delay).timeout
+		process_queue()
+		return
 	# If the queue is empty or a clip is already playing, do nothing
 	if clip_queue.is_empty() or clip_playing:
 		return
@@ -451,12 +501,29 @@ func play_clip(clip: TwitchClip):
 		% [clip.title, clip.broadcaster_name, clip.creator_name],
 	)
 	current_clip = clip
+	## Alsways check obs config before playing
+	if !await check_obs_config():
+		popup_obs_config_if_needed()
+		reset_playback()
+		return
 	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
+
+
+## Shows the OBS configuration panel if it hasn't been shown yet and OBS isn't configured.
+## This function is typically called when OBS connection fails or configuration is missing.
+func popup_obs_config_if_needed():
+	if !obs_config_popup_shown:
+		if !obs_configured:
+			obs_config_popup_shown = true
+			%OBSConfigPanel.popup_centered()
+			%OBSConfigPanel.popup_window = false
+			%OBSConfigPanel.exclusive = true
 
 
 ## This function clears the current clip by setting the OBS input settings to an empty string.
 func clear_clip():
-	obs.set_input_settings(source_name, { "input": "" })
+	if obs.obs_connected and obs_configured:
+		obs.set_input_settings(source_name, { "input": "" })
 
 
 ## This function retrieves a random clip URL for a given Twitch username.
@@ -532,3 +599,173 @@ func get_random_clip_url(username: String) -> TwitchClip:
 		return clip
 
 	return null
+
+
+## Checks the OBS configuration to ensure the required source and filters are set up correctly.
+## This function verifies that:
+## 1. The scene list is available
+## 2. The source exists in one of the scenes
+## 3. The required filters (scale and fade) exist on the source
+## It also updates the UI with configuration suggestions if issues are found.
+## The function returns true if the configuration is valid, false otherwise.
+func check_obs_config() -> bool:
+	# Initialize variables to track the current scene, scene item ID, and filter status
+	cur_scene_name = ""
+	cur_scene_item_id = -1.0
+	has_scale_filter = false
+	has_fade_filter = false
+	first_scene_name = ""
+
+	# Request the list of scenes from OBS
+	obs.get_scene_list()
+
+	# Wait for the scene list to be retrieved, with a maximum of 5 attempts
+	var scene_list = false
+	var tries = 0
+	while typeof(scene_list) != TYPE_ARRAY and tries < 5:
+		tries += 1
+		scene_list = await obs.got_scene_list
+	if tries >= 5:
+		# If we couldn't get the scene list after 5 attempts, log an error
+		if !obs_config_error_shown:
+			logger.log_error("Couldn't get the scene list after %i tries" % tries)
+			obs_config_error_shown = true
+	else:
+		# If we successfully got the scene list, loop through each scene to find our source
+		tries = 0
+		while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+			# Loop through each scene
+			for cur_scene in scene_list:
+				tries += 1
+				# Keep track of the first scene name for use in suggestions
+				if first_scene_name == "":
+					first_scene_name = cur_scene.sceneName
+				# Request the list of scene items for the current scene
+				obs.get_scene_item_list(cur_scene.sceneName)
+				# Wait for the scene item list to be retrieved
+				var scene_item_list = await obs.got_scene_item_list
+				# If we got a valid list, check if our source exists in it
+				if typeof(scene_item_list) != TYPE_ARRAY:
+					continue
+				var i = scene_item_list.find_custom(func(e): return e.sourceName == source_name)
+				# If we found our source, save its scene item ID and scene name
+				if i > -1:
+					cur_scene_item_id = scene_item_list[i].sceneItemId
+					cur_scene_name = cur_scene.sceneName
+					break
+		# If we couldn't find our source after 5 attempts, log an error
+		if tries >= 5:
+			if !obs_config_error_shown:
+				logger.log_error("Couldn't get the source in any scenes after %d tries" % tries)
+				obs_config_error_shown = true
+		else:
+			# If we found our source, check for the required filters
+			tries = 0
+			while !has_scale_filter and tries < 5:
+				tries += 1
+				# Request the scale filter settings
+				obs.get_source_filter(source_name, source_filter_name)
+				# Wait for the filter settings to be retrieved
+				var source_filter = await obs.got_source_filter
+				# If we got valid filter settings, we have the filter
+				if typeof(source_filter) == TYPE_DICTIONARY:
+					has_scale_filter = true
+					break
+			tries = 0
+			while !has_fade_filter and tries < 5:
+				tries += 1
+				# Request the fade filter settings
+				obs.get_source_filter(source_name, fade_filter_name)
+				# Wait for the filter settings to be retrieved
+				var source_filter = await obs.got_source_filter
+				# If we got valid filter settings, we have the filter
+				if typeof(source_filter) == TYPE_DICTIONARY:
+					has_fade_filter = true
+					break
+
+	# Prepare a list of configuration changes needed
+	var config_changes = "[ul]"
+	if cur_scene_item_id == -1.0:
+		# If the source isn't found, suggest creating it
+		config_changes += "[b]Create a Media Source[/b] in scene \"[color=green][b]%s[/b][/color]\" called \"[b]%s[/b]\"." % [first_scene_name, source_name]
+		config_changes += "You can move or copy this to other scenes later.\n"
+	if !has_scale_filter:
+		# If the scale filter isn't found, suggest adding it
+		config_changes += "[b]Add an Effects filter[/b] named \"[b]%s[/b]\" to the source named \"[b]%s[/b]\".\n" % [source_filter_name, source_name]
+	if !has_fade_filter:
+		# If the fade filter isn't found, suggest adding it
+		config_changes += "[b]Add an Effects filter[/b] named \"[b]%s[/b]\" to the source named \"[b]%s[/b]\".\n" % [fade_filter_name, source_name]
+	config_changes += "[/ul]"
+
+	# Update the UI with the configuration suggestions
+	%ConfigChanges.text = config_changes
+	if cur_scene_item_id == -1.0 or !has_scale_filter or !has_fade_filter:
+		# If there are configuration issues, show the setup button and log an error
+		if !%SetupOBS.visible:
+			logger.log_error("There is an issue with OBS configuration.  Check the \"[b]Setup OBS[b]\" button for more details.")
+			%SetupOBS.show()
+		obs_configured = false
+		return false
+	# If the configuration is valid, hide the setup button and panel
+	if !%SetupOBS.visible:
+		logger.log_success("The OBS configuration looks good.")
+		%SetupOBS.hide()
+	%OBSConfigPanel.hide()
+	obs_configured = true
+	obs_config_error_shown = false
+	return true
+
+
+## Handles the button press event for setting up OBS.
+## This function attempts to create the necessary source and filters in OBS
+## if they don't already exist. It retries up to 5 times for each operation.
+## After attempting all necessary operations, it hides the setup panel and button
+## if everything is successful.
+func _on_setup_obs_button_pressed() -> void:
+	var tries = 0
+	# Check if the media source needs to be created
+	if cur_scene_item_id == -1.0:
+		# Create source in scene
+		while cur_scene_item_id == -1.0 and tries < 5:
+			tries += 1
+			obs.create_media_input(first_scene_name, source_name)
+			var result = await obs.created_input
+			if !typeof(result) == TYPE_DICTIONARY:
+				continue
+			cur_scene_item_id = result.sceneItemId
+			logger.log_success("Created new media source: \"%s\" in scene: \"%s\"" % [source_name, first_scene_name])
+		if cur_scene_item_id == -1.0:
+			logger.log_error("Failed to create media source: \"%s\" in scene: \"%s\"" % [source_name, first_scene_name])
+
+	# Check if the scale filter needs to be created
+	if !has_scale_filter:
+		# Create scale filter in scene
+		tries = 0
+		while !has_scale_filter and tries < 5:
+			tries += 1
+			obs.create_source_filter(source_name, source_filter_name, "scale_filter")
+			if !await obs.created_source_filter:
+				continue
+			has_scale_filter = true
+			logger.log_success("Created scale filter on source: \"%s\"" % source_name)
+		if !has_scale_filter:
+			logger.log_error("Failed to create scale filter on source: \"%s\"" % source_name)
+
+	# Check if the fade filter needs to be created
+	if !has_fade_filter:
+		# Create fade filter in scene
+		tries = 0
+		while !has_fade_filter and tries < 5:
+			tries += 1
+			obs.create_source_filter(source_name, fade_filter_name, "color_filter_v2")
+			if !await obs.created_source_filter:
+				continue
+			has_fade_filter = true
+			logger.log_success("Created fade filter on source: \"%s\"" % source_name)
+		if !has_fade_filter:
+			logger.log_error("Failed to create fade filter on source: \"%s\"" % source_name)
+
+	# After all operations, hide the setup panel and button if successful
+	if cur_scene_item_id != -1.0 and has_scale_filter and has_fade_filter:
+		%OBSConfigPanel.hide()
+	%SetupOBS.hide()
