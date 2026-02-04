@@ -966,17 +966,16 @@ unique_name_in_owner = true
 oversampling_override = 1.0
 initial_position = 2
 size = Vector2i(800, 450)
-visible = true
 borderless = false
 min_size = Vector2i(800, 450)
 max_size = Vector2i(800, 450)
 script = ExtResource("10_kqbth")
 
 [node name="BoxContainer" type="BoxContainer" parent="OBSConfigPanel" unique_id=1667888711]
-offset_left = 12.0
-offset_top = 12.0
-offset_right = 788.0
-offset_bottom = 438.0
+offset_left = 9.0
+offset_top = 9.0
+offset_right = 791.0
+offset_bottom = 441.0
 vertical = true
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="OBSConfigPanel/BoxContainer" unique_id=121141510]
@@ -1065,7 +1064,7 @@ script = ExtResource("10_uewes")
 offset_left = 9.0
 offset_top = 9.0
 offset_right = 866.0
-offset_bottom = 576.0
+offset_bottom = 644.0
 vertical = true
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="OBSWebsocketPanel/BoxContainer" unique_id=1862786349]
