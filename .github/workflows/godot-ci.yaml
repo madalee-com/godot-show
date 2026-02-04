@@ -1,5 +1,7 @@
 name: "godot-ci export"
 on: push
+permissions:
+  contents: write
 
 # NOTE: If your `project.godot` is at the repository root, set `PROJECT_PATH` below to ".".
 
@@ -117,7 +119,7 @@ jobs:
           mkdir -v -p build/macos
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
-          godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/"$EXPORT_NAME"_macos.zip"
+          godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/macos/"$EXPORT_NAME"_macos.zip"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
