@@ -40,6 +40,14 @@ jobs:
         with:
           name: win64
           path: build/win64
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          name: Release ${{ github.ref_name }}
+          files: build/win64/Godot-Show_win64.exe
 
   export-linux_x86_x64:
     name: Linux x86/x64 Export
@@ -67,6 +75,14 @@ jobs:
         with:
           name: linux_x86_x64
           path: build/linux_x86_x64
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          name: Release ${{ github.ref_name }}
+          files: build/linux_x86_x64/Godot-Show_linux.x86_64
 
   export-web:
     name: Web Export
@@ -127,22 +143,13 @@ jobs:
         with:
           name: macos
           path: build/macos
-
-  release:
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [export-win64, export-linux_x86_x64, export-mac]
-    steps:
       - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           draft: true
-          preserve_order: true
           generate_release_notes: true
           name: Release ${{ github.ref_name }}
-          
-          files: |
-            Godot-Show_linux.x86_64
-            Godot-Show_win64.exe"
-            Godot-Show_macos.zip
+          files: build/macos/Godot-Show_macos.zip
+
 
