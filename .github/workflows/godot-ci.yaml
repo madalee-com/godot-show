@@ -1,7 +1,7 @@
 name: "godot-ci export"
-on: push
-permissions:
-  contents: write
+on: push:
+    branches:
+      - main
 
 # NOTE: If your `project.godot` is at the repository root, set `PROJECT_PATH` below to ".".
 
@@ -125,3 +125,19 @@ jobs:
         with:
           name: macos
           path: build/macos
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' && github.ref_name.startswith('v')
+    needs: [export-win64, export-linux_x86_x64, export-mac]
+    steps:
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          preserve_order: true
+          files: |
+            "$EXPORT_NAME"_linux.x86_64
+            "$EXPORT_NAME"_win64.exe"
+            "$EXPORT_NAME"_macos.zip
+
