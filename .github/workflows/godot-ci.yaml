@@ -10,7 +10,6 @@ permissions:
 
 env:
   GODOT_VERSION: 4.6
-  EXPORT_NAME: Godot-Show
   PROJECT_PATH: .
 
 jobs:
@@ -35,7 +34,7 @@ jobs:
           mkdir -v -p build/win64
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
-          godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/win64/"$EXPORT_NAME"_win64.exe"
+          godot --headless --verbose --export-release "Windows Desktop" "$EXPORT_DIR/win64/GODOT-SHOW_win64.exe"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -61,7 +60,7 @@ jobs:
           mkdir -v -p build/linux_x86_x64
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
-          godot --headless --verbose --export-release "Linux" "$EXPORT_DIR/linux_x86_x64/"$EXPORT_NAME"_linux.x86_64"
+          godot --headless --verbose --export-release "Linux" "$EXPORT_DIR/linux_x86_x64/GODOT-SHOW_linux.x86_64"
           ls -lah "$EXPORT_DIR/linux_x86_x64"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -122,7 +121,7 @@ jobs:
           mkdir -v -p build/macos
           EXPORT_DIR="$(readlink -f build)"
           cd $PROJECT_PATH
-          godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/macos/"$EXPORT_NAME"_macos.zip"
+          godot --headless --verbose --export-release "macOS" "$EXPORT_DIR/macos/GODOT-SHOW_macos.zip"
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -141,7 +140,7 @@ jobs:
           preserve_order: true
           generate_release_notes: true
           files: |
-            "$EXPORT_NAME"_linux.x86_64
-            "$EXPORT_NAME"_win64.exe"
-            "$EXPORT_NAME"_macos.zip
+            GODOT-SHOW_linux.x86_64
+            GODOT-SHOW_win64.exe"
+            GODOT-SHOW_macos.zip
 
