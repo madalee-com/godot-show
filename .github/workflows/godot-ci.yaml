@@ -129,7 +129,7 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' && github.ref_name.startswith('v')
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [export-win64, export-linux_x86_x64, export-mac]
     steps:
       - name: Release
