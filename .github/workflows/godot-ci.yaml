@@ -139,7 +139,8 @@ jobs:
           draft: true
           preserve_order: true
           generate_release_notes: true
-          name: Release $github.ref_name
+          name: Release ${{ github.ref_name }}
+          
           files: |
             Godot-Show_linux.x86_64
             Godot-Show_win64.exe"
