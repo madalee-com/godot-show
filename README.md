@@ -129,6 +129,7 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Setup CI
 - [x] Add a "hey you want me to setup OBS for you?" dialog
 - [x] Cleanup errors and behaviors on initial setup
+- [ ] Get the CI release to auto generate when a tag is pushed to main
 - [ ] Update docs to use automatic OBS setup
 - [ ] Add more animation options, such as "inflate" mode
 - [ ] Play a sound when growing
