@@ -25,12 +25,14 @@ Show-off random clips from other streamers when you shout them out
 
 ## Quick Start
 
-- Add a Media Source in OBS and name it Godot Show
-- Download and run the application
+- Enable OBS WebSocket in OBS
+- [Download](./releases) and run the application(or use the [Web Application](https://madalee-com.github.io/godot-show/))
+- On the OBS Configuration Needed screen, take note of the Scene that Godot-Show will be added to
 - Press "Connect to Twitch" and Authorize Godot-Show in the browser
+- In OBS copy/move the Godot-Show source to any scenes you want it in.
 - Use !so to send a shoutout and see the clip play in OBS
 
-## Installation
+## Detailed Installation and Setup
 
 ### Prerequisites
 
@@ -38,16 +40,10 @@ Show-off random clips from other streamers when you shout them out
 - A Twitch Channel that you are an admin on
 
 ### Configure OBS
-Godot-Show does it's work by changing the URL of a Media Source in OBS.  It then uses a pair of filters to scale and fade in/out the clip.
+Godot-Show needs to connect to OBS using the WebSocket, so you need to enable that.
 
-![Configure OBS](./readme-assets/obs-setup.gif)
+#### Enable OBS WebSocket
 
-1. Add a Media Source in OBS
-2. Rename the Media Source to "Godot-Show". This name can be configured later, so pick any unique name you want.
-3. Configure the Media Source how you want. We recommend uncheckng "Show nothing when playback ends"
-4. Add a "Scaling/Aspect Ratio" Effects Filter to the source. You can rename this if you want, and configure the name in the application later. This is only required if you want the video to grow/scale in to the scene.
-5. Add a "Color Correction" Effects Filter to the source. You can rename this if you want, and configure the name in the application later. This is only required if you want the video to fade in/out when showing and hiding.
-6. If the WebSocket server isn't enabled, you need to enable it now.
     1. Go to Tools->WebSocket Server Settings
     2. Make sure "Enable WebSocket server" is enabled.
     3. Take note of the Server Port(change it if you want, it defaults to 4455)
@@ -56,19 +52,34 @@ Godot-Show does it's work by changing the URL of a Media Source in OBS.  It then
     6. You can click "Show Connect Info" to see the Server IP/Port/Password if needed
     7. Click Ok
 
-### Installing Godot-Show
-Just download the release for your OS, and run
+![Configure OBS](./readme-assets/twitch-connect-menu.png)
 
-### Initial Godot-Show configuration
-The first time you start Godot-Show you'll need to connect it to Twitch.  You can click the "Connect on Startup" option to have the application auto-connect in the furture.
+![Configure OBS](./assets/images/obs-websocket-screen.png)
 
-![Godot-Show Initial Setup](readme-assets/godot-show-setup.gif)
+#### Installing Godot-Show
+Just [download](./releases) the release for your OS, and run or use the [Web Application](https://madalee-com.github.io/godot-show/)<br />
+NOTE: The Web Application is also available as an "installable" web app if you are using browser that supports PWA(like Chrome)
 
+#### Initial Godot-Show configuration
+The first time you start Godot-Show you'll need to get it connected to OBS and Twitch.
+
+Godot-Show does it's work by changing the URL of a Media Source in OBS.  It then uses a pair of filters to scale and fade in/out the clip.<br />
+You can set this up manually, but we recommend you let Godot-Show set it up for you.
+
+![Godot-Show Initial Setup](readme-assets/godot-show-config-dlf.gif)
+
+#### Connect to OBS
+1. If OBS isn't running you will see a popup telling you to enabled the OBS WebSocket.  If you haven't, you should [enable the WebSocket now](#enable-obs-webSocket).
+2. If you are using a custom port, address, or password, you will need to configure those by clicking Close button on the popup, then clicking the [Settings](#additional-settings) tab, and configure the WebSocket settings there.
+3. Once the connection to OBS is established, if you don't already have the Godot-Show source added to a Scene, or if the source doesn't have the necessary filters, you will see a popup offering to set it up for you.
+4. On the OBS Configuration Needed screen, take note of the Scene that Godot-Show will be added to.
+4. Either click "Setup OBS for me" or add a the source and filters the dialog shows.
+5. In OBS move/copy the Godot-Show source from the scene you noted earlier to any scenes you want it in.
+
+#### Connect to Twitch
 1. Click "Connect to Twitch"
-2. A browser window/tab will open asking if you authorize Godot-Show to do it's stuff, click Authorize
-3. If your OBS Websocket is set to the defaults, Godot-Show should automatically connect.  You should see the message "Connection to OBS established"
-4. If OBS isn't set to the defaults, visit the Settings tab to configure it.  Once properly configured, Godot-Show will auomatically connect.
-5. If the messages "Connection to OBS established" and "Connected to Twitch" both show in the log window, then you are ready to use Godot-Show
+2. A browser window/tab will open asking if you authorize Godot-Show to do it's stuff, click Authorize NOTE: If you are using the WebApp this will provide you with a code to enter in to Twitch, instead.
+3. If the messages "Connection to OBS established" and "Connected to Twitch" both show in the log window, then you are ready to use Godot-Show
 
 ## Additional Settings
 ![Settings Screen](readme-assets/settings.png)
@@ -115,6 +126,14 @@ The first time you start Godot-Show you'll need to connect it to Twitch.  You ca
 #### How Pronounce?
 Go-doh-show
 
+#### About the [Web Application](https://madalee-com.github.io/godot-show/)
+
+The WebApp runs on your device using WebAssembly and WebGL 2.0<br />
+It doesn't need any backend server, it's all client side<br />
+However, it has to connect to Twitch differently.  You will be given a code to enter in to a dialog on Twitch.  These codes have a limited liftime, so you may need to enter the code every few days.
+
+Other than that, the WebApp can do everything the desktop app does.
+
 #### Why Godot?
 It works on everything, development is fully self contained between Godot and the source code, and it makes sense to use something that understands frame pacing when doing animations.
 
@@ -129,8 +148,8 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Setup CI
 - [x] Add a "hey you want me to setup OBS for you?" dialog
 - [x] Cleanup errors and behaviors on initial setup
-- [ ] Get the CI release to auto generate when a tag is pushed to main
-- [ ] Update docs to use automatic OBS setup
+- [x] Get the CI release to auto generate when a tag is pushed to main
+- [x] Update docs to use automatic OBS setup
 - [ ] Add more animation options, such as "inflate" mode
 - [ ] Play a sound when growing
 - [ ] Option to avoid clip replays
