@@ -45,6 +45,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          draft: true
           files: build/win64/Godot-Show_win64.exe
 
   export-linux_x86_x64:
@@ -78,6 +79,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          draft: true
           files: build/linux_x86_x64/Godot-Show_linux.x86_64
 
   export-web:
@@ -144,6 +146,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
+          draft: true
           files: build/macos/Godot-Show_macos.zip
 
   release:
