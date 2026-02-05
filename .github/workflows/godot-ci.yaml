@@ -139,6 +139,7 @@ jobs:
         with:
           draft: true
           preserve_order: true
+          generate_release_notes: true
           files: |
             "$EXPORT_NAME"_linux.x86_64
             "$EXPORT_NAME"_win64.exe"
