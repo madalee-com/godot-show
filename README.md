@@ -134,6 +134,8 @@ However, it has to connect to Twitch differently.  You will be given a code to e
 
 Other than that, the WebApp can do everything the desktop app does.
 
+NOTE: The WebApp doesn't seem to work from an OBS browser source, as it needs to open a tab/window to connect to Twitch, initially, and OBS doesn't allow opening new windows.  There may be a way to get OBS to share a chrome desktop browser user profile so that you can login outside of OBS, once, and then load via the source in OBS.
+
 #### Why Godot?
 It works on everything, development is fully self contained between Godot and the source code, and it makes sense to use something that understands frame pacing when doing animations.
 
