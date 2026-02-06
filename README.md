@@ -26,7 +26,7 @@ Show-off random clips from other streamers when you shout them out
 ## Quick Start
 
 - Enable OBS WebSocket in OBS
-- [Download](./releases) and run the application(or use the [Web Application](https://madalee-com.github.io/godot-show/))
+- [Download](./releases) and run the application(or use the [Web Application](./about-the-web-application))
 - On the OBS Configuration Needed screen, take note of the Scene that Godot-Show will be added to
 - Press "Connect to Twitch" and Authorize Godot-Show in the browser
 - In OBS copy/move the Godot-Show source to any scenes you want it in.
@@ -121,26 +121,31 @@ You can set this up manually, but we recommend you let Godot-Show set it up for 
 | `Fade In` | Enabled | If enabled, the clip will Fade In when being shown |
 | `Fade Out` | Enabled | If enabled, the clip will Fade Out at the end |
 
-## Some Notes
 
-#### How Pronounce?
-Go-doh-show
-
-#### About the [Web Application](https://madalee-com.github.io/godot-show/)
+## About the [Web Application](https://madalee-com.github.io/godot-show/)
 
 **IMPORTANT**
 In order for the WebApp to work, it has to stay as the active browser tab, due to browsers sleeping non-active tabs.
-For this reason, we recommend using the Web version as an "installed Web app"
+For this reason, we **recommend** using the Web version as an **"installed Web app"** by clicking the Install button at the right side of the address bar in chrome.
+![Install WebApp](./readme-assets/chrome-install-webapp.png)
+![Install WebApp Approve](./readme-assets/chrome-install-webapp-2.png)
 
 The WebApp runs on your device using WebAssembly and WebGL 2.0<br />
 It doesn't need any backend server, it's all client side<br />
 However, it has to connect to Twitch differently.  You will be given a code to enter in to a dialog on Twitch.  These codes have a limited liftime, so you may need to enter the code every few days.
 
+You may also need to click an icon in the WebApp's title bar to allow the initial Twitch authorizations popup.
+
 Other than that, the WebApp can do everything the desktop app does.
 
 NOTE: The WebApp doesn't seem to work from an OBS browser source, as it needs to open a tab/window to connect to Twitch, initially, and OBS doesn't allow opening new windows.  There may be a way to get OBS to share a chrome desktop browser user profile so that you can login outside of OBS, once, and then load via the source in OBS.
 
-#### Why Godot?
+## Some Notes
+
+### How Pronounce?
+Go-doh-show
+
+### Why Godot?
 It works on everything, development is fully self contained between Godot and the source code, and it makes sense to use something that understands frame pacing when doing animations.
 
 ## Roadmap
