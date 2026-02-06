@@ -1064,7 +1064,7 @@ script = ExtResource("10_uewes")
 offset_left = 9.0
 offset_top = 9.0
 offset_right = 866.0
-offset_bottom = 644.0
+offset_bottom = 576.0
 vertical = true
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="OBSWebsocketPanel/BoxContainer" unique_id=1862786349]

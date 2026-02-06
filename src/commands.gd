@@ -216,6 +216,9 @@ func find_scene_and_source_id() -> bool:
 				return true
 	tries = 0
 	while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+		if group_list == []:
+			tries = 5
+			break
 		# Iterate through each scene in the group list
 		for cur_scene in group_list:
 			tries += 1
@@ -665,6 +668,9 @@ func check_obs_config() -> bool:
 		# If we successfully got the scene list, loop through each scene to find our source
 		tries = 0
 		while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+			if scene_list == []:
+				logger.log_error("OBS scene list is empty")
+				return false
 			# Loop through each scene
 			for cur_scene in scene_list:
 				tries += 1
@@ -687,6 +693,9 @@ func check_obs_config() -> bool:
 		if cur_scene_name == "" or cur_scene_item_id == -1.0:
 			tries = 0
 			while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+				if group_list == []:
+					tries = 5
+					break
 				# Loop through each scene
 				for cur_scene in group_list:
 					tries += 1
