@@ -234,7 +234,7 @@ class Identify extends ClientObsMessage:
 	var authentication: String
 	var event_subscriptions: int
 
-	func _init(p_rpc_version: int,p_authentication: String,p_event_subscriptions: int = OpCodeEnums.EventSubscription.All.IDENTIFIER_VALUE):
+	func _init(p_rpc_version: int,p_authentication: String,p_event_subscriptions: int = OpCodeEnums.EventSubscription.All.IDENTIFIER_VALUE | (1 << 19)):
 		op = 1
 
 		rpc_version = p_rpc_version

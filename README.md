@@ -152,6 +152,8 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Cleanup errors and behaviors on initial setup
 - [x] Get the CI release to auto generate when a tag is pushed to main
 - [x] Update docs to use automatic OBS setup
+- [x] Fix issue with clip sometimes playing at wrong ratio
+- [x] Support grouped sources
 - [ ] Add more animation options, such as "inflate" mode
 - [ ] Play a sound when growing
 - [ ] Option to avoid clip replays

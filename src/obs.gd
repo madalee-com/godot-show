@@ -59,6 +59,10 @@ signal got_scene_item_transform(event_data)
 signal got_scene_list(event_data)
 ## Emitted when scene item list is received
 signal got_scene_item_list(event_data)
+## Emitted when group list is received
+signal got_group_list(event_data)
+## Emitted when group scene item list is received
+signal got_group_scene_item_list(event_data)
 ## Emitted when a new input is created
 signal created_input(event_data)
 ## Emitted when a new source filter is created
@@ -192,6 +196,16 @@ func _on_data_received(data: ServerObsMessage) -> void:
 						created_source_filter.emit(true)
 					else:
 						created_source_filter.emit(false)
+				"GetGroupList":
+					if success:
+						got_group_list.emit(resp["d"].responseData.groups)
+					else:
+						got_group_list.emit(false)
+				"GetGroupSceneItemList":
+					if success:
+						got_group_scene_item_list.emit(resp["d"].responseData.sceneItems)
+					else:
+						got_group_scene_item_list.emit(false)
 
 
 ## Sets the OBS connected state to true and performs related actions.
@@ -369,6 +383,23 @@ func get_scene_item_list(scene_name: String):
 		},
 	)
 
+## Retrieves the list of scenes in OBS.
+func get_group_list():
+	send_command(
+		"GetGroupList",
+	)
+
+
+## Retrieves the list of scene items in a specific group in OBS.
+##
+## @param scene_name The name of the group to retrieve items from.
+func get_group_scene_item_list(group_name: String):
+	send_command(
+		"GetGroupSceneItemList",
+		{
+			"sceneName": group_name,
+		},
+	)
 
 ## Creates a new media input source for a specific scene item.
 ##

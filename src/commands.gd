@@ -81,7 +81,7 @@ var cur_opacity = 0.0
 ## Previous state of the media input
 var last_media_state = null
 ## Current aspect ratio of the clip
-var cur_clip_ratio = 1.0
+var cur_clip_ratio = 0.0
 ## Current scene item ID of the clip
 var cur_scene_item_id = -1.0
 ## Current scene name where the clip is displayed
@@ -98,6 +98,8 @@ var first_scene_name = ""
 var obs_configured = false
 # Flag indicating whether an OBS configuration error message has already been shown
 var obs_config_error_shown = false
+# Flag indicating whether to wait for a clip transform before conisdering playback to be started
+var wait_for_clip_transform = false
 
 
 ## Main process function that handles frame timing and animation updates
@@ -173,6 +175,7 @@ func find_scene_and_source_id() -> bool:
 	obs.get_scene_list()
 	# Wait for the scene list to be received
 	var scene_list = false
+	var group_list = false
 	var tries = 0
 	# Retry up to 5 times if the scene list is not yet available
 	while typeof(scene_list) != TYPE_ARRAY and tries < 5:
@@ -182,6 +185,12 @@ func find_scene_and_source_id() -> bool:
 	if tries >= 5:
 		check_obs_config()
 		return false
+	# Get the group list from OBS
+	obs.get_group_list()
+	# Retry up to 5 times if the scene list is not yet available
+	while typeof(group_list) != TYPE_ARRAY and tries < 5:
+		tries += 1
+		group_list = await obs.got_group_list
 	# Reset the scene item ID and scene name
 	cur_scene_item_id = -1.0
 	cur_scene_name = ""
@@ -205,6 +214,25 @@ func find_scene_and_source_id() -> bool:
 				cur_scene_item_id = scene_item_list[i].sceneItemId
 				cur_scene_name = cur_scene.sceneName
 				return true
+	tries = 0
+	while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+		# Iterate through each scene in the group list
+		for cur_scene in group_list:
+			tries += 1
+			# Get the group item list for the current scene
+			obs.get_group_scene_item_list(cur_scene)
+			# Wait for the scene item list to be received
+			var scene_item_list = await obs.got_group_scene_item_list
+			# Skip if the scene item list is not yet available
+			if typeof(scene_item_list) != TYPE_ARRAY:
+				continue
+			# Search for the source with the name 'Godot-Show'
+			var i = scene_item_list.find_custom(func(e): return e.sourceName == source_name)
+			# If found, set the scene item ID and scene name
+			if i > -1:
+				cur_scene_item_id = scene_item_list[i].sceneItemId
+				cur_scene_name = cur_scene
+				return true
 	# If we didn't find the source, check if OBS is configured
 	check_obs_config()
 	return false
@@ -212,24 +240,11 @@ func find_scene_and_source_id() -> bool:
 
 ## Handles clip started event
 func _on_clip_started() -> void:
-	# Find the scene and source, incase it somehow changed
-	if await find_scene_and_source_id() == false:
-		reset_playback()
-		return
-	# Disable the scale filter so that we can get the original resolution
-	obs.set_source_filter_enabled(source_name, source_filter_name, false)
-	if (await obs.source_filter_enabled) == false:
-		return
-	# Get the transform so we know the origional display ratio
-	obs.get_scene_item_transform(cur_scene_name, cur_scene_item_id)
-	var transform = await obs.got_scene_item_transform
-	if typeof(transform) == TYPE_BOOL:
-		return
-	cur_clip_ratio = transform.sourceWidth / transform.sourceHeight
 	# Re-enable the scale filter so we can start scaling
-	obs.set_source_filter_enabled(source_name, source_filter_name, true)
-	if (await obs.source_filter_enabled == false):
-		return
+	if obs_scale:
+		obs.set_source_filter_enabled(source_name, source_filter_name, true)
+		if (await obs.source_filter_enabled == false):
+			return
 
 	# Restart the media timer with a slower rate now that we are only checkng
 	# for bad or missed state changes
@@ -257,6 +272,7 @@ func _on_obs_input_settings_set(result) -> void:
 	if current_clip == null:
 		return
 	current_clip = null
+	wait_for_clip_transform = true
 	# Restart the media timer at a higher rate so we can start animations
 	# as soon as the clip actually starts playing
 	%OBSMediaTimer.start(0.05)
@@ -300,7 +316,7 @@ func _on_obs_got_media_input_status(result) -> void:
 	if result.mediaState == null:
 		return
 	var media_state = result.mediaState
-	if result.mediaDuration == null:
+	if result.mediaDuration == null:                                            
 		result.mediaDuration = 0.0
 	var media_duration = result.mediaDuration
 	if result.mediaCursor == null:
@@ -309,7 +325,7 @@ func _on_obs_got_media_input_status(result) -> void:
 	# Check if media is playing
 	# Even if the state says it's playing, if the media_duration is 0.0, it's not actually loaded
 	# Furthermore if the cursor isn't beyond 0.0, we can't be sure the clip is ready to actually play
-	if media_state == obs.MediaInputStates.OBS_MEDIA_STATE_PLAYING and media_duration > 0.0 and media_cursor > 0.0:
+	if media_state == obs.MediaInputStates.OBS_MEDIA_STATE_PLAYING and media_duration > 0.0 and media_cursor > 0.0 and cur_clip_ratio != 0.0:
 		# If state goes from buffering to playing then start animations
 		if !clip_playing:
 			clip_playing = true
@@ -467,7 +483,7 @@ func fade_source(opacity: float):
 ##
 ## @param filter_name - The name of the filter to enable.
 func enable_source_filter(filter_name: String):
-	if obs.obs_connected and obs_configured:
+	if obs.obs_connected and obs_configured and obs_scale:
 		obs.set_source_filter_enabled(source_name, filter_name, true)
 
 
@@ -501,11 +517,17 @@ func play_clip(clip: TwitchClip):
 		% [clip.title, clip.broadcaster_name, clip.creator_name],
 	)
 	current_clip = clip
-	## Alsways check obs config before playing
-	if !await check_obs_config():
-		popup_obs_config_if_needed()
+	# Find the scene and source, incase it somehow changed
+	if await find_scene_and_source_id() == false:
 		reset_playback()
 		return
+	# Disable the scale filter so that we can get the original resolution
+	if obs_scale:
+		obs.set_source_filter_enabled(source_name, source_filter_name, false)
+		if (await obs.source_filter_enabled) == false:
+			reset_playback()
+			return
+	# Set the clip URL
 	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
 
 
@@ -625,10 +647,19 @@ func check_obs_config() -> bool:
 	while typeof(scene_list) != TYPE_ARRAY and tries < 5:
 		tries += 1
 		scene_list = await obs.got_scene_list
-	if tries >= 5:
+	# Request the list of groups from OBS
+	obs.get_group_list()
+
+	# Wait for the group list to be retrieved, with a maximum of 5 attempts
+	var group_list = false
+	tries = 0
+	while typeof(group_list) != TYPE_ARRAY and tries < 5:
+		tries += 1
+		group_list = await obs.got_group_list
+	if typeof(scene_list) != TYPE_ARRAY:
 		# If we couldn't get the scene list after 5 attempts, log an error
 		if !obs_config_error_shown:
-			logger.log_error("Couldn't get the scene list after %i tries" % tries)
+			logger.log_error("Couldn't get the scene list after 5 tries")
 			obs_config_error_shown = true
 	else:
 		# If we successfully got the scene list, loop through each scene to find our source
@@ -653,8 +684,30 @@ func check_obs_config() -> bool:
 					cur_scene_item_id = scene_item_list[i].sceneItemId
 					cur_scene_name = cur_scene.sceneName
 					break
+		if cur_scene_name == "" or cur_scene_item_id == -1.0:
+			tries = 0
+			while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
+				# Loop through each scene
+				for cur_scene in group_list:
+					tries += 1
+					# Keep track of the first scene name for use in suggestions
+					if first_scene_name == "":
+						first_scene_name = cur_scene
+					# Request the list of scene items for the current scene
+					obs.get_group_scene_item_list(cur_scene)
+					# Wait for the scene item list to be retrieved
+					var scene_item_list = await obs.got_group_scene_item_list
+					# If we got a valid list, check if our source exists in it
+					if typeof(scene_item_list) != TYPE_ARRAY:
+						continue
+					var i = scene_item_list.find_custom(func(e): return e.sourceName == source_name)
+					# If we found our source, save its scene item ID and scene name
+					if i > -1:
+						cur_scene_item_id = scene_item_list[i].sceneItemId
+						cur_scene_name = cur_scene
+						break
 		# If we couldn't find our source after 5 attempts, log an error
-		if tries >= 5:
+		if cur_scene_name == "" or cur_scene_item_id == -1.0:
 			if !obs_config_error_shown:
 				logger.log_error("Couldn't get the source in any scenes after %d tries" % tries)
 				obs_config_error_shown = true
@@ -769,3 +822,12 @@ func _on_setup_obs_button_pressed() -> void:
 	if cur_scene_item_id != -1.0 and has_scale_filter and has_fade_filter:
 		%OBSConfigPanel.hide()
 	%SetupOBS.hide()
+
+## Handles the event when the scene item transform changes.
+## This function updates the clip ratio based on the new scene item transform.
+## It is called whenever the scene item's source width or height changes.
+func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
+	if wait_for_clip_transform and event_data.sceneItemId == cur_scene_item_id:
+		if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
+			wait_for_clip_transform = false
+			cur_clip_ratio = event_data.sceneItemTransform.sourceWidth / event_data.sceneItemTransform.sourceHeight
