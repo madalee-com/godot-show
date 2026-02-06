@@ -128,6 +128,10 @@ Go-doh-show
 
 #### About the [Web Application](https://madalee-com.github.io/godot-show/)
 
+**IMPORTANT**
+In order for the WebApp to work, it has to stay as the active browser tab, due to browsers sleeping non-active tabs.
+For this reason, we recommend using the Web version as an "installed Web app"
+
 The WebApp runs on your device using WebAssembly and WebGL 2.0<br />
 It doesn't need any backend server, it's all client side<br />
 However, it has to connect to Twitch differently.  You will be given a code to enter in to a dialog on Twitch.  These codes have a limited liftime, so you may need to enter the code every few days.
