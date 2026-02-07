@@ -145,7 +145,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [export-win64, export-linux_x86_x64, export-macos]
+    needs: [export-win64, export-linux_x86_x64, export-mac]
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v5
