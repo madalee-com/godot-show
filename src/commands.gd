@@ -251,7 +251,24 @@ func _on_clip_started() -> void:
 	# Re-enable the scale filter so we can start scaling
 	if obs_scale:
 		obs.set_source_filter_enabled(source_name, source_filter_name, true)
-		if (await obs.source_filter_enabled == false):
+		# Wait till the message goes through, if it fails just continue
+		if await obs.source_filter_enabled:
+			var event_data
+			# Set a 2 second time to call our signal just incase OBS never calls it
+			var tmr = get_tree().create_timer(2.0)
+			tmr.timeout.connect(
+				func():
+					obs.source_filter_enable_state_changed.emit({ "sourceName": cur_scene_item_id })
+			)
+			# Wait for till we get the event for the proper source or skip if the timer times out
+			while true:
+				event_data = await obs.source_filter_enable_state_changed
+				if event_data.sourceName == source_name:
+					break
+			if tmr.time_left <= 0:
+				logger.log_error("Timeout waiting for scale filter to re-enable")
+		else:
+			logger.log_error("Failed to re-enable the scale filter")
 			return
 
 	# Restart the media timer with a slower rate now that we are only checkng
@@ -561,6 +578,8 @@ func play_clip(clip: TwitchClip):
 						event_data = await obs.source_filter_enable_state_changed
 						if event_data.sourceName == source_name:
 							break
+		else:
+			check_obs_config()
 
 	# Set the clip URL
 	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
