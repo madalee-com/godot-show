@@ -149,6 +149,18 @@ jobs:
     steps:
       - name: Download all workflow run artifacts
         uses: actions/download-artifact@v5
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          output-file: 'sbom.spdx.json'
+      - name: Generate SBOM attestation
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: |
+            linux_x86_x64/Godot-Show_linux.x86_64
+            win64/Godot-Show_win64.exe
+            macos/Godot-Show_macos.zip
+          sbom-path: 'sbom.spdx.json'
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
