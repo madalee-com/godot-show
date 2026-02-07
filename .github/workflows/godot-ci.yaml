@@ -42,10 +42,6 @@ jobs:
         with:
           name: win64
           path: build/win64
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-path: build/win64/Godot-Show_win64.exe
 
   export-linux_x86_x64:
     name: Linux x86/x64 Export
@@ -73,10 +69,6 @@ jobs:
         with:
           name: linux_x86_x64
           path: build/linux_x86_x64
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-path: build/linux_x86_x64/Godot-Show_linux.x86_64
 
   export-web:
     name: Web Export
@@ -137,10 +129,6 @@ jobs:
         with:
           name: macos
           path: build/macos
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v3
-        with:
-          subject-path: build/macos/Godot-Show_macos.zip
 
   release:
     runs-on: ubuntu-latest
