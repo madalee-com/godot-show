@@ -18,7 +18,6 @@ jobs:
   export-win64:
     name: Windows x64 Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
-    needs: release
     container:
       image: barichello/godot-ci:4.6
     steps:
@@ -47,17 +46,10 @@ jobs:
         uses: actions/attest-build-provenance@v3
         with:
           subject-path: build/win64/Godot-Show_win64.exe
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          files: build/win64/Godot-Show_win64.exe
 
   export-linux_x86_x64:
     name: Linux x86/x64 Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
-    needs: release
     container:
       image: barichello/godot-ci:4.6
     steps:
@@ -85,12 +77,6 @@ jobs:
         uses: actions/attest-build-provenance@v3
         with:
           subject-path: build/linux_x86_x64/Godot-Show_linux.x86_64
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          files: build/linux_x86_x64/Godot-Show_linux.x86_64
 
   export-web:
     name: Web Export
@@ -129,7 +115,6 @@ jobs:
   export-mac:
     name: MacOS Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
-    needs: release
     container:
       image: barichello/godot-ci:4.6
     steps:
@@ -156,20 +141,22 @@ jobs:
         uses: actions/attest-build-provenance@v3
         with:
           subject-path: build/macos/Godot-Show_macos.zip
-      - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          draft: true
-          files: build/macos/Godot-Show_macos.zip
 
   release:
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [export-win64, export-linux_x86_x64, export-macos]
     steps:
+      - name: Download all workflow run artifacts
+        uses: actions/download-artifact@v5
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
           name: Release ${{ github.ref_name }}
+          preserve_order: true
+          files: |
+            linux_x86_x64/Godot-Show_linux.x86_64
+            win64/Godot-Show_win64.exe
+            macos/Godot-Show_macos.zip
