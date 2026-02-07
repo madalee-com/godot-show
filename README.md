@@ -26,7 +26,7 @@ Show-off random clips from other streamers when you shout them out
 ## Quick Start
 
 - Enable OBS WebSocket in OBS
-- [Download](releases) and run the application(or use the [Web Application](./about-the-web-application))
+- [Download](/releases) and run the application(or use the [Web Application](./about-the-web-application))
 - On the OBS Configuration Needed screen, take note of the Scene that Godot-Show will be added to
 - Press "Connect to Twitch" and Authorize Godot-Show in the browser
 - In OBS copy/move the Godot-Show source to any scenes you want it in.
