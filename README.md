@@ -127,6 +127,7 @@ You can set this up manually, but we recommend you let Godot-Show set it up for 
 **IMPORTANT**
 In order for the WebApp to work, it has to stay as the active browser tab, due to browsers sleeping non-active tabs.
 For this reason, we **recommend** using the Web version as an **"installed Web app"** by clicking the Install button at the right side of the address bar in chrome.
+
 ![Install WebApp](./readme-assets/chrome-install-webapp.png)
 ![Install WebApp Approve](./readme-assets/chrome-install-webapp-2.png)
 
