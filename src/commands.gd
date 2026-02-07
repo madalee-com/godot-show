@@ -101,6 +101,10 @@ var obs_config_error_shown = false
 # Flag indicating whether to wait for a clip transform before conisdering playback to be started
 var wait_for_clip_transform = false
 
+var user_clips = { }
+
+var try_clip_play = false
+
 
 ## Main process function that handles frame timing and animation updates
 func _process(delta: float) -> void:
@@ -138,6 +142,7 @@ func _on_shoutout_command_received(
 
 ## Handles the resetting variables if the clip is in an unexpected state
 func _on_bad_clip_state() -> void:
+	logger.log_error("Bad clip state, sending back to queue.")
 	reset_playback()
 
 
@@ -155,9 +160,9 @@ func _on_clip_ended() -> void:
 	# once the clip no longer shows on the screen, remove it from
 	# the media source to prevent looping playback
 	clear_clip()
-	#reset size an playing state
-	cur_size = min_size
-	scale_source(cur_size.x, cur_size.y)
+	if obs_scale:
+		obs.set_source_filter_enabled(source_name, source_filter_name, false)
+		await obs.source_filter_enabled
 	# if the clip queue has more clips, play them after a timeout
 	if not clip_queue.is_empty():
 		await get_tree().create_timer(queue_delay).timeout
@@ -268,6 +273,7 @@ func _on_obs_media_input_playback_ended(event_data: Dictionary) -> void:
 ## Handles OBS input settings set event
 func _on_obs_input_settings_set(result) -> void:
 	if !result:
+		logger.log_error("Failed to set clip, sending back to queue.")
 		reset_playback()
 		return
 	# once we are sure that the clip has been set, we can clear it from
@@ -319,7 +325,7 @@ func _on_obs_got_media_input_status(result) -> void:
 	if result.mediaState == null:
 		return
 	var media_state = result.mediaState
-	if result.mediaDuration == null:                                            
+	if result.mediaDuration == null:
 		result.mediaDuration = 0.0
 	var media_duration = result.mediaDuration
 	if result.mediaCursor == null:
@@ -332,6 +338,7 @@ func _on_obs_got_media_input_status(result) -> void:
 		# If state goes from buffering to playing then start animations
 		if !clip_playing:
 			clip_playing = true
+			try_clip_play = false
 			emit_signal("clip_started") # Signal that a clip has started playing
 		last_media_state = media_state
 		return
@@ -349,6 +356,7 @@ func _on_obs_got_media_input_status(result) -> void:
 ## Resets playback to the previous clip and restarts queue processing
 func reset_playback():
 	clip_playing = false
+	try_clip_play = false
 	if current_clip != null:
 		clip_queue.insert(0, current_clip)
 	current_clip = null
@@ -494,6 +502,8 @@ func enable_source_filter(filter_name: String):
 ## Waits for OBS to be ready before attempting to play.
 ## Does nothing if the queue is empty or if a clip is already playing.
 func process_queue():
+	if try_clip_play:
+		return
 	# If OBS isn't fully ready, then try again after the queue timer time
 	if !obs.obs_connected or !obs_configured:
 		await get_tree().create_timer(queue_delay).timeout
@@ -515,6 +525,9 @@ func process_queue():
 ## Example:
 ## play_clip(clip)
 func play_clip(clip: TwitchClip):
+	if try_clip_play:
+		return
+	try_clip_play = true
 	logger.log(
 		"Playing clip: \"%s\" from %s clipped by %s"
 		% [clip.title, clip.broadcaster_name, clip.creator_name],
@@ -522,14 +535,33 @@ func play_clip(clip: TwitchClip):
 	current_clip = clip
 	# Find the scene and source, incase it somehow changed
 	if await find_scene_and_source_id() == false:
+		logger.log_error("Failed to find scene and source!")
 		reset_playback()
 		return
 	# Disable the scale filter so that we can get the original resolution
 	if obs_scale:
-		obs.set_source_filter_enabled(source_name, source_filter_name, false)
-		if (await obs.source_filter_enabled) == false:
-			reset_playback()
-			return
+		# First we get the source filter to see if it even needs to be disabled
+		obs.get_source_filter(source_name, source_filter_name)
+		var source_filter = await obs.got_source_filter
+		# Only continue if we actually got the source filter
+		if typeof(source_filter) == TYPE_DICTIONARY:
+			if source_filter.filterEnabled:
+				# Enable the source filter
+				obs.set_source_filter_enabled(source_name, source_filter_name, false)
+				# Wait till the message goes through, if it fails just continue
+				if await obs.source_filter_enabled:
+					var event_data
+					# Set a 2 second time to call our signal just incase OBS never calls it
+					get_tree().create_timer(2.0).timeout.connect(
+						func():
+							obs.source_filter_enable_state_changed.emit({ "sourceName": cur_scene_item_id })
+					)
+					# Wait for till we get the event for the proper source or skip if the timer times out
+					while true:
+						event_data = await obs.source_filter_enable_state_changed
+						if event_data.sourceName == source_name:
+							break
+
 	# Set the clip URL
 	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
 
@@ -568,26 +600,32 @@ func get_random_clip_url(username: String) -> TwitchClip:
 	# Log the start of the clip retrieval process
 	logger.log("Getting clip for user: %s" % username)
 
-	# Fetch the Twitch user information for the given username
-	var so_user: TwitchUser
-	so_user = await Twitch.get_user(username)
+	if !user_clips.has(username):
+		# Fetch the Twitch user information for the given username
+		var so_user: TwitchUser
+		so_user = await Twitch.get_user(username)
 
-	# Fetch a list of clips for the user
-	var clips: TwitchGetClips.Response
-	var clip_options = TwitchGetClips.Opt.from_json(
-		{
-			"broadcaster_id": so_user.id,
-			"first": 100,
-		},
-	)
-	clips = await Twitch.api.get_clips(clip_options)
+		# Fetch a list of clips for the user
+		var clips: TwitchGetClips.Response
+		var clip_options = TwitchGetClips.Opt.from_json(
+			{
+				"broadcaster_id": so_user.id,
+				"first": 100,
+			},
+		)
+		clips = await Twitch.api.get_clips(clip_options)
 
-	# If no clips are found, return null
-	if clips.data.is_empty():
-		return null
+		# If no clips are found, return null
+		if clips.data.is_empty():
+			return null
+		user_clips[username] = { "unplayed": clips.data, "played": [] }
 
 	# Pick a random clip from the list
-	var clip = clips.data.pick_random()
+	if user_clips[username].unplayed.is_empty():
+		user_clips[username].unplayed = user_clips[username].played
+	var clip = user_clips[username].unplayed.pick_random()
+	user_clips[username].unplayed.erase(clip)
+	user_clips[username].played.append(clip)
 
 	# Create a request to get the clip's access token
 	# this doesn't use the standard Twitch API, this is the GraphQL API
@@ -764,7 +802,7 @@ func check_obs_config() -> bool:
 	if cur_scene_item_id == -1.0 or !has_scale_filter or !has_fade_filter:
 		# If there are configuration issues, show the setup button and log an error
 		if !%SetupOBS.visible:
-			logger.log_error("There is an issue with OBS configuration.  Check the \"[b]Setup OBS[b]\" button for more details.")
+			logger.log_error("There is an issue with OBS configuration.  Check the \"[b]Setup OBS[/b]\" button for more details.")
 			%SetupOBS.show()
 		obs_configured = false
 		return false
@@ -831,6 +869,7 @@ func _on_setup_obs_button_pressed() -> void:
 	if cur_scene_item_id != -1.0 and has_scale_filter and has_fade_filter:
 		%OBSConfigPanel.hide()
 	%SetupOBS.hide()
+
 
 ## Handles the event when the scene item transform changes.
 ## This function updates the clip ratio based on the new scene item transform.

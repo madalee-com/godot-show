@@ -41,6 +41,8 @@ signal media_input_playback_started(event_data)
 signal media_input_playback_ended(event_data)
 ## Emitted when source filter settings have been successfully set
 signal source_filter_settings_set(event_data)
+## Emitted when source filter's enable state changes
+signal source_filter_enable_state_changed(event_data)
 ## Emitted when source filter data is received
 signal got_source_filter(event_data)
 ## Emitted when media input status is received
@@ -125,6 +127,8 @@ func _on_data_received(data: ServerObsMessage) -> void:
 					media_input_playback_ended.emit(event.event_data)
 				"SceneItemTransformChanged":
 					scene_item_transform_changed.emit(event.event_data)
+				"SourceFilterEnableStateChanged":
+					source_filter_enable_state_changed.emit(event.event_data)
 		self.OpCodeEnums.WebSocketOpCode.RequestResponse.IDENTIFIER_VALUE:
 			var resp: RequestResponse = data
 			var success = false

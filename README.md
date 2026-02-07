@@ -163,9 +163,10 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Update docs to use automatic OBS setup
 - [x] Fix issue with clip sometimes playing at wrong ratio
 - [x] Support grouped sources
+- [x] Avoid clip replays
+- [ ] Improve the Twitch connection process when failing or timing out
 - [ ] Add more animation options, such as "inflate" mode
 - [ ] Play a sound when growing
-- [ ] Option to avoid clip replays
 - [ ] Command to add a clip to queue
 ```
 

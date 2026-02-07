@@ -31,6 +31,7 @@ func _on_ready() -> void:
 	logger.app_logger.log_message.connect(_log_message)
 	## connect to twitch signals
 	Twitch.auth.token_handler.unauthenticated.connect(_on_token_handler_unauthenticated)
+	Twitch.auth.token_handler.token_resolved.connect(_on_token_resolved)
 	load_settings()
 	## Auto-connect to Twitch if enabled
 	if %AutoConnect.button_pressed:
@@ -41,6 +42,7 @@ func _on_ready() -> void:
 	%Obs.enable_connect()
 
 func _on_token_handler_unauthenticated():
+	%TwitchConnect.disabled = false
 	refresh_twitch_token_status()
 
 ## Settings Load/Save
@@ -167,6 +169,7 @@ func refresh_twitch_token_status():
 
 ## Twitch Setup
 func twitch_setup() -> bool:
+	%TwitchConnect.disabled = true
 	logger.log("Attempting connection to Twitch")
 	## Setup Twitch connection
 	if await Twitch.setup():
@@ -184,6 +187,7 @@ func twitch_setup() -> bool:
 		return true
 	refresh_twitch_token_status()
 	logger.log_error("Error connecting to Twitch")
+	%TwitchConnect.disabled = false
 	return false
 
 func forget_twitch():
@@ -191,6 +195,11 @@ func forget_twitch():
 	await Twitch.unsetup()
 	Twitch.auth.token.remove_tokens()
 	refresh_twitch_token_status()
+	%TwitchConnect.disabled = false
+
+func _on_token_resolved(tokens) -> void:
+	if tokens == null:
+		%TwitchConnect.disabled = false
 
 ## Handle Twitch connect button
 func _on_twitch_connect_pressed() -> void:
