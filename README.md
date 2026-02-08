@@ -206,3 +206,4 @@ This project is provided under the GNU General Public License v3.0. See the [LIC
 - [Godot 4.6](link) - The application/game framework
 - [Twitcher](https://github.com/kanimaru/twitcher) - Provides the GDScript Twitch API
 - [OBS Websocket GD](https://github.com/you-win/obs-websocket-gd) - Provides the GDScript OBS API
+- [godot-ansi-escape-to-bbcode](https://github.com/fbcosentino/godot-ansi-escape-to-bbcode) - Converts ANSI escape codes to BBCode for captured logs.

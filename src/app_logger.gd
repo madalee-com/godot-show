@@ -84,18 +84,31 @@ func _init() -> void:
 
 func _exit_tree() -> void:
 	OS.remove_logger(app_logger)
-
+# Log a message with the specified text in the default color
+# @param _text The text to be logged
 func log(_text: String) -> void:
 	append_text("[code]" + _text + "[/code]\n")
 
+# Log a successful operation with the specified text in green color
+# @param _text The text to be logged as a success message
 func log_success(_text: String) -> void:
 	append_text("[code][color=#00FF00]" + _text + "[/color][/code]\n")
 
+# Log a warning message with the specified text in orange color
+# @param _text The text to be logged as a warning message
 func log_warn(_text: String) -> void:
 	append_text("[code][color=#FF8800]" + _text + "[/color][/code]\n")
 
+# Log an error message with the specified text in red color
+# @param _text The text to be logged as an error message
 func log_error(_text: String) -> void:
 	append_text("[code][color=#FF0000]" + _text + "[/color][/code]\n")
+
+# Log a debug message with the specified text in light gray color
+# @param _text The text to be logged as a debug message (only shown in debug builds)
+func log_debug(_text: String) -> void:
+	if OS.is_debug_build():
+		append_text("[code][color=#999999]" + _text + "[/color][/code]\n")
 
 
 func ansi_to_bbcode(text_line: String) -> String:

@@ -148,6 +148,7 @@ func _on_bad_clip_state() -> void:
 
 ## Handles clip ended event
 func _on_clip_ended() -> void:
+	logger.log_debug("Got clip ended event from OBS")
 	clip_playing = false
 	# reset resizing state
 	clip_resizing = false
@@ -156,15 +157,19 @@ func _on_clip_ended() -> void:
 	clip_fading_out = fade_out
 	# fading is handled in the animation thread so it will start
 	# on it's own, we wait here for the fade animation to complete
+	logger.log_debug("await clip_end_delay seconds: %f" % clip_end_delay)
 	await get_tree().create_timer(clip_end_delay).timeout
 	# once the clip no longer shows on the screen, remove it from
 	# the media source to prevent looping playback
 	clear_clip()
 	if obs_scale:
+		logger.log_debug("Disable scale filter")
 		obs.set_source_filter_enabled(source_name, source_filter_name, false)
 		await obs.source_filter_enabled
+		logger.log_debug("Call to disable scale filter succeeded")
 	# if the clip queue has more clips, play them after a timeout
 	if not clip_queue.is_empty():
+		logger.log_debug("Queue is not empty, processing queue after queue delay of %f seconds" % queue_delay)
 		await get_tree().create_timer(queue_delay).timeout
 		process_queue()
 
@@ -176,6 +181,7 @@ func _on_clip_ended() -> void:
 ## if it hasn't been configured already, and returns false.
 ## The function returns true if the scene and source ID are successfully found.
 func find_scene_and_source_id() -> bool:
+	logger.log_debug("Searching for scene and source")
 	# Get the scene list from OBS
 	obs.get_scene_list()
 	# Wait for the scene list to be received
@@ -184,16 +190,19 @@ func find_scene_and_source_id() -> bool:
 	var tries = 0
 	# Retry up to 5 times if the scene list is not yet available
 	while typeof(scene_list) != TYPE_ARRAY and tries < 5:
+		logger.log_debug("Try %d for getting OBS scene list")
 		tries += 1
 		scene_list = await obs.got_scene_list
 	# If we've tried too many times, check if OBS is configured
 	if tries >= 5:
+		logger.log_debug("Failed to get the scene list")
 		check_obs_config()
 		return false
 	# Get the group list from OBS
 	obs.get_group_list()
 	# Retry up to 5 times if the scene list is not yet available
 	while typeof(group_list) != TYPE_ARRAY and tries < 5:
+		logger.log_debug("Try %d for getting OBS group list")
 		tries += 1
 		group_list = await obs.got_group_list
 	# Reset the scene item ID and scene name
@@ -201,6 +210,7 @@ func find_scene_and_source_id() -> bool:
 	cur_scene_name = ""
 	# Try to find the source within scenes up to 5 times
 	tries = 0
+	logger.log_debug("Itterating scene and group lists now")
 	while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
 		# Iterate through each scene in the scene list
 		for cur_scene in scene_list:
@@ -218,6 +228,7 @@ func find_scene_and_source_id() -> bool:
 			if i > -1:
 				cur_scene_item_id = scene_item_list[i].sceneItemId
 				cur_scene_name = cur_scene.sceneName
+				logger.log_debug("Found scene and source")
 				return true
 	tries = 0
 	while (cur_scene_name == "" or cur_scene_item_id == -1.0) and tries < 5:
@@ -240,7 +251,9 @@ func find_scene_and_source_id() -> bool:
 			if i > -1:
 				cur_scene_item_id = scene_item_list[i].sceneItemId
 				cur_scene_name = cur_scene
+				logger.log_debug("Found scene and source")
 				return true
+	logger.log_debug("Failed to find scene and source, check config")
 	# If we didn't find the source, check if OBS is configured
 	check_obs_config()
 	return false
@@ -248,22 +261,28 @@ func find_scene_and_source_id() -> bool:
 
 ## Handles clip started event
 func _on_clip_started() -> void:
+	logger.log_debug("We think the clip truley started")
 	# Re-enable the scale filter so we can start scaling
 	if obs_scale:
+		logger.log_debug("OBS Scale is enabled, try setting scale filter enabled")
 		obs.set_source_filter_enabled(source_name, source_filter_name, true)
 		# Wait till the message goes through, if it fails just continue
 		if await obs.source_filter_enabled:
+			logger.log_debug("Request to set scale filter enabled succeed")
 			var event_data
 			# Set a 2 second time to call our signal just incase OBS never calls it
-			var tmr = get_tree().create_timer(2.0)
+			var tmr: SceneTreeTimer = get_tree().create_timer(2.0)
 			tmr.timeout.connect(
 				func():
-					obs.source_filter_enable_state_changed.emit({ "sourceName": cur_scene_item_id })
+					obs.source_filter_enable_state_changed.emit({ "sourceName": "" })
 			)
-			# Wait for till we get the event for the proper source or skip if the timer times out
+			logger.log_debug("Wait for confirmation that scale filter got enabled")
+			# Wait till we get the event for the proper source or skip if the timer times out
 			while true:
 				event_data = await obs.source_filter_enable_state_changed
 				if event_data.sourceName == source_name:
+					tmr.timeout.disconnect(tmr.timeout.get_connections().front().callable)
+					logger.log_debug("Got confirmation that scale filter was enabled")
 					break
 			if tmr.time_left <= 0:
 				logger.log_error("Timeout waiting for scale filter to re-enable")
@@ -271,6 +290,7 @@ func _on_clip_started() -> void:
 			logger.log_error("Failed to re-enable the scale filter")
 			return
 
+	logger.log_debug("Set media state timer to 1 second")
 	# Restart the media timer with a slower rate now that we are only checkng
 	# for bad or missed state changes
 	%OBSMediaTimer.start(1.0)
@@ -284,11 +304,13 @@ func _on_clip_started() -> void:
 func _on_obs_media_input_playback_ended(event_data: Dictionary) -> void:
 	# only handle events for the correct source
 	if event_data["inputName"] == source_name:
+		logger.log_debug("Got event saying the media input has ended")
 		_on_clip_ended()
 
 
 ## Handles OBS input settings set event
 func _on_obs_input_settings_set(result) -> void:
+	logger.log_debug("Got event saying input settings have been set")
 	if !result:
 		logger.log_error("Failed to set clip, sending back to queue.")
 		reset_playback()
@@ -296,9 +318,11 @@ func _on_obs_input_settings_set(result) -> void:
 	# once we are sure that the clip has been set, we can clear it from
 	# the app
 	if current_clip == null:
+		logger.log_debug("Current clip is not set, skip")
 		return
 	current_clip = null
 	wait_for_clip_transform = true
+	logger.log_debug("Starting to wait for confirmation that clip is actually starting, will poll ever 0.05 seconds now")
 	# Restart the media timer at a higher rate so we can start animations
 	# as soon as the clip actually starts playing
 	%OBSMediaTimer.start(0.05)
@@ -309,6 +333,7 @@ func _on_source_filter_settings_set(result) -> void:
 	# if we fail to set the filter, we need to reset state so the next
 	# attempt will work
 	if typeof(result) == TYPE_BOOL:
+		logger.log_debug("Failed to set the filter settings")
 		reset_animations()
 
 
@@ -351,9 +376,11 @@ func _on_obs_got_media_input_status(result) -> void:
 	# Check if media is playing
 	# Even if the state says it's playing, if the media_duration is 0.0, it's not actually loaded
 	# Furthermore if the cursor isn't beyond 0.0, we can't be sure the clip is ready to actually play
+	logger.log_debug("Check if media playing, media_duration: %f media_cursor: %f cur_clip_ratio: %f" % [media_duration, media_cursor, cur_clip_ratio])
 	if media_state == obs.MediaInputStates.OBS_MEDIA_STATE_PLAYING and media_duration > 0.0 and media_cursor > 0.0 and cur_clip_ratio != 0.0:
 		# If state goes from buffering to playing then start animations
 		if !clip_playing:
+			logger.log_debug("Looks like we are truly playing the clip now")
 			clip_playing = true
 			try_clip_play = false
 			emit_signal("clip_started") # Signal that a clip has started playing
@@ -372,17 +399,21 @@ func _on_obs_got_media_input_status(result) -> void:
 
 ## Resets playback to the previous clip and restarts queue processing
 func reset_playback():
+	logger.log_debug("Resetting playback")
 	clip_playing = false
 	try_clip_play = false
 	if current_clip != null:
+		logger.log_debug("Add clip back to front of queue")
 		clip_queue.insert(0, current_clip)
 	current_clip = null
+	logger.log_debug("Wait for %f seconds before processing queue" % queue_delay)
 	await get_tree().create_timer(queue_delay).timeout
 	process_queue()
 
 
 ## Resets all animations and states
 func reset_animations():
+	logger.log_debug("Resetting animations")
 	clip_resizing = false
 	clip_initial_size_set = false
 	resize_time_elapsed = 0.0
@@ -401,6 +432,7 @@ func animate_scale(delta: float) -> void:
 	# if we haven't set the starting size, do so immediately
 	# and then exit and wait for the next process time
 	if not clip_initial_size_set:
+		logger.log_debug("Clip initial size not set yet, doing so now with cur_clip_ratio: %f" % cur_clip_ratio)
 		resize_time_elapsed = 0.0
 		cur_size = min_size
 		scale_source(cur_size.x, cur_size.y)
@@ -416,6 +448,7 @@ func animate_scale(delta: float) -> void:
 
 	# if we have reached the maximum size, stop animating
 	if cur_size.x >= maxWidth and cur_size.y >= maxHeight:
+		logger.log_debug("Clip has reached maximum size, stopping scale animation.")
 		resize_time_elapsed = 0.0
 		clip_resizing = false
 		return
@@ -444,6 +477,7 @@ func animate_fade(delta: float) -> void:
 	# if we haven't set the initial fade values, do so now
 	# then exit and wait for the next animation process
 	if not clip_initial_fade_set:
+		logger.log_debug("Initial fade not set, setting initial fade values now")
 		fade_time_elapsed = 0.0
 		cur_opacity = 0.0 if clip_fading_in else 1.0
 		fade_source(cur_opacity)
@@ -451,6 +485,7 @@ func animate_fade(delta: float) -> void:
 		return
 	# if we are done fading, stop the animation and reset values
 	if (clip_fading_in and cur_opacity >= 1.0) or (clip_fading_out and cur_opacity <= 0.0):
+		logger.log_debug("Fade complete, resetting values")
 		fade_time_elapsed = 0.0
 		clip_fading_in = false
 		clip_fading_out = false
@@ -507,27 +542,22 @@ func fade_source(opacity: float):
 		obs.set_source_filter_settings(source_name, fade_filter_name, { "opacity": opacity })
 
 
-## Enables a specified source filter for the current source.
-##
-## @param filter_name - The name of the filter to enable.
-func enable_source_filter(filter_name: String):
-	if obs.obs_connected and obs_configured and obs_scale:
-		obs.set_source_filter_enabled(source_name, filter_name, true)
-
-
 ## Processes the clip queue by playing the next clip if available.
 ## Waits for OBS to be ready before attempting to play.
 ## Does nothing if the queue is empty or if a clip is already playing.
 func process_queue():
 	if try_clip_play:
+		logger.log_debug("We're already trying to play a clip, skip")
 		return
 	# If OBS isn't fully ready, then try again after the queue timer time
 	if !obs.obs_connected or !obs_configured:
+		logger.log_debug("OBS isn't ready yet, wait for %d seconds before trying again" % queue_delay)
 		await get_tree().create_timer(queue_delay).timeout
 		process_queue()
 		return
 	# If the queue is empty or a clip is already playing, do nothing
 	if clip_queue.is_empty() or clip_playing:
+		logger.log_debug("Queue is empty or a clip is already playing, nothing to do")
 		return
 	# Play the next clip from the queue
 	play_clip(clip_queue.pop_front())
@@ -543,6 +573,7 @@ func process_queue():
 ## play_clip(clip)
 func play_clip(clip: TwitchClip):
 	if try_clip_play:
+		logger.log_debug("we're already trying to play a clip, skip")
 		return
 	try_clip_play = true
 	logger.log(
@@ -557,31 +588,42 @@ func play_clip(clip: TwitchClip):
 		return
 	# Disable the scale filter so that we can get the original resolution
 	if obs_scale:
+		logger.log_debug("Scaling is enabled, will try to disable scale filter so we can get original clip size")
 		# First we get the source filter to see if it even needs to be disabled
+		logger.log_debug("First get scale filter state")
 		obs.get_source_filter(source_name, source_filter_name)
 		var source_filter = await obs.got_source_filter
 		# Only continue if we actually got the source filter
 		if typeof(source_filter) == TYPE_DICTIONARY:
+			logger.log_debug("We got the scale filter state")
 			if source_filter.filterEnabled:
+				logger.log_debug("Scale filter is enabled, will try to disable it")
 				# Enable the source filter
 				obs.set_source_filter_enabled(source_name, source_filter_name, false)
 				# Wait till the message goes through, if it fails just continue
 				if await obs.source_filter_enabled:
+					logger.log_debug("Command to disable scale filter succeeded, check to make sure it's actually disabled")
 					var event_data
 					# Set a 2 second time to call our signal just incase OBS never calls it
-					get_tree().create_timer(2.0).timeout.connect(
+					var tmr = get_tree().create_timer(2.0)
+					tmr.timeout.connect(
 						func():
-							obs.source_filter_enable_state_changed.emit({ "sourceName": cur_scene_item_id })
+							logger.log_debug("Timer expired, no message received from OBS")
+							obs.source_filter_enable_state_changed.emit({ "sourceName": "" })
 					)
 					# Wait for till we get the event for the proper source or skip if the timer times out
 					while true:
 						event_data = await obs.source_filter_enable_state_changed
 						if event_data.sourceName == source_name:
+							tmr.timeout.disconnect(tmr.timeout.get_connections().front().callable)
+							logger.log_debug("Got confirmation from OBS that the scale filter is now disabled")
 							break
 		else:
+			logger.log_debug("Failure getting scale filter state")
 			check_obs_config()
 
 	# Set the clip URL
+	logger.log_debug("Actually set the clip URL in OBS now")
 	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
 
 
@@ -599,6 +641,7 @@ func popup_obs_config_if_needed():
 ## This function clears the current clip by setting the OBS input settings to an empty string.
 func clear_clip():
 	if obs.obs_connected and obs_configured:
+		logger.log_debug("Clearing current clip in OBS now")
 		obs.set_input_settings(source_name, { "input": "" })
 
 
@@ -620,6 +663,7 @@ func get_random_clip_url(username: String) -> TwitchClip:
 	logger.log("Getting clip for user: %s" % username)
 
 	if !user_clips.has(username):
+		logger.log_debug("User: %s not found in clip cache. Fetching from API" % username)
 		# Fetch the Twitch user information for the given username
 		var so_user: TwitchUser
 		so_user = await Twitch.get_user(username)
@@ -632,22 +676,30 @@ func get_random_clip_url(username: String) -> TwitchClip:
 				"first": 100,
 			},
 		)
+		logger.log_debug("Waiting for Twitch API response")
 		clips = await Twitch.api.get_clips(clip_options)
 
 		# If no clips are found, return null
 		if clips.data.is_empty():
+			logger.log_debug("No clips found for user: %s", username)
 			return null
+		logger.log_debug("Got clips for user: %s and stored in clip cache" % username)
 		user_clips[username] = { "unplayed": clips.data, "played": [] }
 
 	# Pick a random clip from the list
 	if user_clips[username].unplayed.is_empty():
+		logger.log_debug("No unplayed clips found for user: %s moving played to unplayed", username)
 		user_clips[username].unplayed = user_clips[username].played
+		user_clips[username].played.clear()
+	logger.log_debug("Picking a random clip from the unplayed list")
 	var clip = user_clips[username].unplayed.pick_random()
+	logger.log_debug("Clip picked: %s, moving from unplayed to played" % clip.id)
 	user_clips[username].unplayed.erase(clip)
 	user_clips[username].played.append(clip)
 
 	# Create a request to get the clip's access token
 	# this doesn't use the standard Twitch API, this is the GraphQL API
+	logger.log_debug("Creating a request to get the clip's access token")
 	var req: BufferedHTTPClient.RequestData = Twitch.api.client.request(
 		"https://gql.twitch.tv/gql",
 		HTTPClient.METHOD_POST,
@@ -667,10 +719,12 @@ func get_random_clip_url(username: String) -> TwitchClip:
 	)
 
 	# Wait for the response from the Twitch API
+	logger.log_debug("Waiting for the response from the Twitch API")
 	var res: BufferedHTTPClient.ResponseData = await Twitch.api.client.wait_for_request(req)
 
 	# If the request was successful, parse the response and construct the clip URL
 	if res.response_code == 200:
+		logger.log_debug("Got clip token from Twitch API")
 		var parsed = JSON.parse_string(res.response_data.get_string_from_utf8())
 
 		var clip_url = parsed.data.clip.videoQualities[0].sourceURL + "?token=%s&sig=%s" % [
@@ -679,7 +733,7 @@ func get_random_clip_url(username: String) -> TwitchClip:
 		]
 		clip.url = clip_url
 		return clip
-
+	logger.log_debug("Failed to get clip token from Twitch API")
 	return null
 
 
@@ -691,6 +745,7 @@ func get_random_clip_url(username: String) -> TwitchClip:
 ## It also updates the UI with configuration suggestions if issues are found.
 ## The function returns true if the configuration is valid, false otherwise.
 func check_obs_config() -> bool:
+	logger.log_debug("Checking OBS configuration")
 	# Initialize variables to track the current scene, scene item ID, and filter status
 	cur_scene_name = ""
 	cur_scene_item_id = -1.0
@@ -894,7 +949,13 @@ func _on_setup_obs_button_pressed() -> void:
 ## This function updates the clip ratio based on the new scene item transform.
 ## It is called whenever the scene item's source width or height changes.
 func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
+	if wait_for_clip_transform:
+		logger.log_debug("A scene item transform changed")
 	if wait_for_clip_transform and event_data.sceneItemId == cur_scene_item_id:
+		logger.log_debug("The transform was for our source, updating clip ratio")
 		if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
 			wait_for_clip_transform = false
 			cur_clip_ratio = event_data.sceneItemTransform.sourceWidth / event_data.sceneItemTransform.sourceHeight
+			logger.log_debug("The new clip ratio is: %f" % cur_clip_ratio)
+		else:
+			logger.log_debug("The source width or height is zero, not updating clip ratio")
