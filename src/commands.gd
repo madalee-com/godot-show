@@ -973,16 +973,27 @@ func _on_setup_obs_button_pressed() -> void:
 func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 	if wait_for_clip_transform:
 		logger.log_debug("A scene item transform changed")
-	if wait_for_clip_transform and event_data.sceneItemId == cur_scene_item_id:
-		logger.log_debug("The transform was for our source, updating clip ratio")
-		if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
+		# OBS doesn't send us the source id/name so we need to ask it for that
+		obs.get_scene_item_source(event_data.sceneName, event_data.sceneItemId)
+		var source_data = await obs.got_scene_item_source
+		if typeof(source_data) != TYPE_DICTIONARY:
+			# If the request to get the source ID failed, then reset playback
+			reset_playback()
 			wait_for_clip_transform = false
-			cur_clip_ratio = event_data.sceneItemTransform.sourceWidth / event_data.sceneItemTransform.sourceHeight
-			logger.log_debug("The new clip ratio is: %f" % cur_clip_ratio)
-		else:
-			logger.log_debug("The source width or height is zero, not updating clip ratio")
+			return
+		# If this transform is fro the correct source name, then update the clip ratio.
+		if wait_for_clip_transform and source_data.sourceName == source_name:
+			logger.log_debug("The transform was for our source, updating clip ratio")
+			if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
+				wait_for_clip_transform = false
+				cur_clip_ratio = event_data.sceneItemTransform.sourceWidth / event_data.sceneItemTransform.sourceHeight
+				logger.log_debug("The new clip ratio is: %f" % cur_clip_ratio)
+			else:
+				logger.log_debug("The source width or height is zero, not updating clip ratio")
 
-
+## Handles the event when a source filter's enable state changes.
+## This function is called whenever a source filter is enabled or disabled.
+## It is used to update the source filter's enable state in the scene.
 func _on_obs_source_filter_enable_state_changed(event_data: Variant) -> void:
 	if event_data.sourceName == source_name:
 		obs_scale_filter_enable_state_changed.emit(event_data)

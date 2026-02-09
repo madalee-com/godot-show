@@ -69,6 +69,8 @@ signal got_group_scene_item_list(event_data)
 signal created_input(event_data)
 ## Emitted when a new source filter is created
 signal created_source_filter(event_data)
+## Emitted when a scene item source data received
+signal got_scene_item_source(event_data)
 
 ## Logger instance
 @onready var logger = %AppLogger
@@ -126,6 +128,7 @@ func _on_data_received(data: ServerObsMessage) -> void:
 				"MediaInputPlaybackEnded":
 					media_input_playback_ended.emit(event.event_data)
 				"SceneItemTransformChanged":
+					logger.log_debug("Got source filter enable state change for: %s %d" % [event.event_data.sceneName, event.event_data.sceneItemId])
 					scene_item_transform_changed.emit(event.event_data)
 				"SourceFilterEnableStateChanged":
 					logger.log_debug("Got source filter enable state change for: %s %s" % [event.event_data.sourceName, event.event_data.filterEnabled])
@@ -181,6 +184,11 @@ func _on_data_received(data: ServerObsMessage) -> void:
 						got_scene_item_id.emit(resp["d"].responseData.sceneItemId)
 					else:
 						got_scene_item_id.emit(false)
+				"GetSceneItemSource":
+					if success:
+						got_scene_item_source.emit(resp["d"].responseData)
+					else:
+						got_scene_item_source.emit(false)
 				"GetSceneItemTransform":
 					if success:
 						got_scene_item_transform.emit(resp["d"].responseData.sceneItemTransform)
@@ -350,6 +358,21 @@ func get_scene_item_id(scene_name: String, source_name: String):
 		{
 			"sceneName": scene_name,
 			"sourceName": source_name,
+		},
+		UUIDUtil.v7(),
+	)
+
+
+## Retrieves the Source of a scene item in OBS.
+##
+## @param scene_name The name of the scene containing the item.
+## @param scene_item_id The id of the scene item within the scene.
+func get_scene_item_source(scene_name: String, scene_item_id: float):
+	send_command(
+		"GetSceneItemSource",
+		{
+			"sceneName": scene_name,
+			"sceneItemId": scene_item_id,
 		},
 		UUIDUtil.v7(),
 	)
