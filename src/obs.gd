@@ -128,6 +128,7 @@ func _on_data_received(data: ServerObsMessage) -> void:
 				"SceneItemTransformChanged":
 					scene_item_transform_changed.emit(event.event_data)
 				"SourceFilterEnableStateChanged":
+					logger.log_debug("Got source filter enable state change for: %s %s" % [event.event_data.sourceName, event.event_data.filterEnabled])
 					source_filter_enable_state_changed.emit(event.event_data)
 		self.OpCodeEnums.WebSocketOpCode.RequestResponse.IDENTIFIER_VALUE:
 			var resp: RequestResponse = data

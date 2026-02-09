@@ -22,6 +22,7 @@ const TWITCH_VIDEO_API_HASH = "36b89d2507fce29e5ca551df756d27c1cfe079e2609642b43
 signal bad_clip_state
 signal clip_started
 signal clip_ended
+signal obs_scale_filter_enable_state_changed
 
 @onready var logger = %AppLogger
 @onready var obs = %Obs
@@ -100,9 +101,9 @@ var obs_configured = false
 var obs_config_error_shown = false
 # Flag indicating whether to wait for a clip transform before conisdering playback to be started
 var wait_for_clip_transform = false
-
+# Holds the clips for each user once they've been retrieved from Twitch
 var user_clips = { }
-
+# True if we are trying to play a clip right now
 var try_clip_play = false
 
 
@@ -190,7 +191,7 @@ func find_scene_and_source_id() -> bool:
 	var tries = 0
 	# Retry up to 5 times if the scene list is not yet available
 	while typeof(scene_list) != TYPE_ARRAY and tries < 5:
-		logger.log_debug("Try %d for getting OBS scene list")
+		logger.log_debug("Try %d for getting OBS scene list" % tries)
 		tries += 1
 		scene_list = await obs.got_scene_list
 	# If we've tried too many times, check if OBS is configured
@@ -202,7 +203,7 @@ func find_scene_and_source_id() -> bool:
 	obs.get_group_list()
 	# Retry up to 5 times if the scene list is not yet available
 	while typeof(group_list) != TYPE_ARRAY and tries < 5:
-		logger.log_debug("Try %d for getting OBS group list")
+		logger.log_debug("Try %d for getting OBS group list" % tries)
 		tries += 1
 		group_list = await obs.got_group_list
 	# Reset the scene item ID and scene name
@@ -265,31 +266,35 @@ func _on_clip_started() -> void:
 	# Re-enable the scale filter so we can start scaling
 	if obs_scale:
 		logger.log_debug("OBS Scale is enabled, try setting scale filter enabled")
+		# Prepare a function to set the clip url if
+		var handle_clip_end_if_filter_enabled = func(event_data):
+			if !event_data.filterEnabled:
+				logger.log("Scale filter got set to diabled after trying to enable it")
+			else:
+				handle_clip_end()
+		# Connect to the filter state changed function to detect the disable event
+		obs_scale_filter_enable_state_changed.connect(handle_clip_end_if_filter_enabled, CONNECT_ONE_SHOT)
+		# Set a timout of 2 seconds to wait for the source filter to get enabled
+		get_tree().create_timer(2.0).timeout.connect(
+			func():
+				# If the function is still connected to the signal after 2 seconds, we failed
+				if obs_scale_filter_enable_state_changed.is_connected(handle_clip_end_if_filter_enabled):
+					logger.log_debug("Timer expired, no message received from OBS")
+					obs_scale_filter_enable_state_changed.disconnect(handle_clip_end_if_filter_enabled)
+		)
+
+		# Enable the source filter
 		obs.set_source_filter_enabled(source_name, source_filter_name, true)
 		# Wait till the message goes through, if it fails just continue
 		if await obs.source_filter_enabled:
-			logger.log_debug("Request to set scale filter enabled succeed")
-			var event_data
-			# Set a 2 second time to call our signal just incase OBS never calls it
-			var tmr: SceneTreeTimer = get_tree().create_timer(2.0)
-			tmr.timeout.connect(
-				func():
-					obs.source_filter_enable_state_changed.emit({ "sourceName": "" })
-			)
-			logger.log_debug("Wait for confirmation that scale filter got enabled")
-			# Wait till we get the event for the proper source or skip if the timer times out
-			while true:
-				event_data = await obs.source_filter_enable_state_changed
-				if event_data.sourceName == source_name:
-					tmr.timeout.disconnect(tmr.timeout.get_connections().front().callable)
-					logger.log_debug("Got confirmation that scale filter was enabled")
-					break
-			if tmr.time_left <= 0:
-				logger.log_error("Timeout waiting for scale filter to re-enable")
-		else:
-			logger.log_error("Failed to re-enable the scale filter")
+			logger.log_debug("Command to enable scale filter succeeded")
+			# Don't handle the until the OBS event says the filter was disabled
 			return
+		logger.log_debug("Error enabling scale filter")
+	handle_clip_end()
 
+
+func handle_clip_end():
 	logger.log_debug("Set media state timer to 1 second")
 	# Restart the media timer with a slower rate now that we are only checkng
 	# for bad or missed state changes
@@ -321,6 +326,7 @@ func _on_obs_input_settings_set(result) -> void:
 		logger.log_debug("Current clip is not set, skip")
 		return
 	current_clip = null
+	cur_clip_ratio = 0.0
 	wait_for_clip_transform = true
 	logger.log_debug("Starting to wait for confirmation that clip is actually starting, will poll ever 0.05 seconds now")
 	# Restart the media timer at a higher rate so we can start animations
@@ -598,33 +604,49 @@ func play_clip(clip: TwitchClip):
 			logger.log_debug("We got the scale filter state")
 			if source_filter.filterEnabled:
 				logger.log_debug("Scale filter is enabled, will try to disable it")
-				# Enable the source filter
+				# Prepare a function to set the clip url if
+				var set_clip_url_if_enabled = func(event_data):
+					if event_data.filterEnabled:
+						logger.log("Scale filter got set to enabled after trying to disable it")
+					else:
+						set_clip_url(clip)
+				# Connect to the filter state changed function to detect the disable event
+				obs_scale_filter_enable_state_changed.connect(set_clip_url_if_enabled, CONNECT_ONE_SHOT)
+				# Set a timout of 2 seconds to wait for the source filter to get disabled
+				get_tree().create_timer(2.0).timeout.connect(
+					func():
+						# If the function is still connected to the signal after 2 seconds, we failed
+						if obs_scale_filter_enable_state_changed.is_connected(set_clip_url_if_enabled):
+							logger.log_debug("Timer expired, no message received from OBS")
+							obs_scale_filter_enable_state_changed.disconnect(set_clip_url_if_enabled)
+				)
+
+				# Disable the source filter
 				obs.set_source_filter_enabled(source_name, source_filter_name, false)
 				# Wait till the message goes through, if it fails just continue
 				if await obs.source_filter_enabled:
-					logger.log_debug("Command to disable scale filter succeeded, check to make sure it's actually disabled")
-					var event_data
-					# Set a 2 second time to call our signal just incase OBS never calls it
-					var tmr = get_tree().create_timer(2.0)
-					tmr.timeout.connect(
-						func():
-							logger.log_debug("Timer expired, no message received from OBS")
-							obs.source_filter_enable_state_changed.emit({ "sourceName": "" })
-					)
-					# Wait for till we get the event for the proper source or skip if the timer times out
-					while true:
-						event_data = await obs.source_filter_enable_state_changed
-						if event_data.sourceName == source_name:
-							tmr.timeout.disconnect(tmr.timeout.get_connections().front().callable)
-							logger.log_debug("Got confirmation from OBS that the scale filter is now disabled")
-							break
+					logger.log_debug("Command to disable scale filter succeeded")
+					# Don't set the clip until the OBS event says the filter was disabled
+					return
+				logger.log_debug("Error disabling scale filter")
+				reset_playback()
+				return
+			logger.log_debug("Scale filter not enabled, skipping")
 		else:
 			logger.log_debug("Failure getting scale filter state")
 			check_obs_config()
+			reset_playback()
+			return
+	set_clip_url(clip)
 
+
+func set_clip_url(clip: TwitchClip = null):
 	# Set the clip URL
 	logger.log_debug("Actually set the clip URL in OBS now")
-	obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
+	if clip != null:
+		obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
+		return
+	obs.set_input_settings(source_name, { "input": "", "is_local_file": false })
 
 
 ## Shows the OBS configuration panel if it hasn't been shown yet and OBS isn't configured.
@@ -642,7 +664,7 @@ func popup_obs_config_if_needed():
 func clear_clip():
 	if obs.obs_connected and obs_configured:
 		logger.log_debug("Clearing current clip in OBS now")
-		obs.set_input_settings(source_name, { "input": "" })
+		set_clip_url()
 
 
 ## This function retrieves a random clip URL for a given Twitch username.
@@ -959,3 +981,8 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 			logger.log_debug("The new clip ratio is: %f" % cur_clip_ratio)
 		else:
 			logger.log_debug("The source width or height is zero, not updating clip ratio")
+
+
+func _on_obs_source_filter_enable_state_changed(event_data: Variant) -> void:
+	if event_data.sourceName == source_name:
+		obs_scale_filter_enable_state_changed.emit(event_data)

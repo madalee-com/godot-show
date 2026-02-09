@@ -1154,6 +1154,7 @@ text = "Close"
 [connection signal="input_settings_set" from="Obs" to="Commands" method="_on_obs_input_settings_set"]
 [connection signal="media_input_playback_ended" from="Obs" to="Commands" method="_on_obs_media_input_playback_ended"]
 [connection signal="scene_item_transform_changed" from="Obs" to="Commands" method="_on_obs_scene_item_transform_changed"]
+[connection signal="source_filter_enable_state_changed" from="Obs" to="Commands" method="_on_obs_source_filter_enable_state_changed"]
 [connection signal="pressed" from="HBoxContainer/SetupOBS" to="." method="_on_setup_obs_pressed"]
 [connection signal="pressed" from="HBoxContainer/AboutButton" to="." method="_on_about_button_pressed"]
 [connection signal="ready" from="AboutPanel" to="AboutPanel" method="_on_ready"]

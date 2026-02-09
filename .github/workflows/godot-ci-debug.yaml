@@ -103,7 +103,7 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
-          name: Debug ${{ github.ref_name }}
+          name: Debug Build ${{ github.ref_name }}
           preserve_order: true
           files: |
             linux_x86_x64/Godot-Show_linux_debug.x86_64
