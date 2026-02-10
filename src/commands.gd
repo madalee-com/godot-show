@@ -282,7 +282,6 @@ func _on_clip_started() -> void:
 					logger.log_debug("Timer expired, no message received from OBS")
 					obs_scale_filter_enable_state_changed.disconnect(handle_clip_end_if_filter_enabled)
 		)
-
 		# Enable the source filter
 		obs.set_source_filter_enabled(source_name, source_filter_name, true)
 		# Wait till the message goes through, if it fails just continue
@@ -452,8 +451,8 @@ func animate_scale(delta: float) -> void:
 	else:
 		maxWidth = maxHeight * cur_clip_ratio
 
-	# if we have reached the maximum size, stop animating
-	if cur_size.x >= maxWidth and cur_size.y >= maxHeight:
+	# if we have finished the animation time, stop the animation and reset variables.
+	if resize_time_elapsed >= time_to_scale:
 		logger.log_debug("Clip has reached maximum size, stopping scale animation.")
 		resize_time_elapsed = 0.0
 		clip_resizing = false
@@ -461,16 +460,26 @@ func animate_scale(delta: float) -> void:
 	# keep track of the total time spent on the resize animation
 	resize_time_elapsed += delta
 	# calculate the new size based on the elapsed time
-	if cur_size.x < maxWidth:
-		var progress_ratio = resize_time_elapsed / time_to_scale
-		cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
-		if cur_size.x > maxWidth:
-			cur_size.x = maxWidth
-	if cur_size.y < maxHeight:
-		var progress_ratio = resize_time_elapsed / time_to_scale
-		cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
-		if cur_size.y > maxHeight:
-			cur_size.y = maxHeight
+	var progress_ratio: float = resize_time_elapsed / time_to_scale
+	#cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
+	#cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
+
+	var grow_ratio: float = progress_ratio
+	if progress_ratio < 0.33:
+		grow_ratio = progress_ratio
+	elif progress_ratio < 0.53:
+		grow_ratio = 0.33 - 0.05 * ((progress_ratio - 0.33) / 0.20)
+	elif progress_ratio < 0.70:
+		grow_ratio = 0.28 + 0.42 * ((progress_ratio - 0.53) / 0.17)
+	elif progress_ratio < 0.90:
+		grow_ratio = 0.70 - 0.05 * ((progress_ratio - 0.70) / 0.20)
+	else:
+		grow_ratio = 0.65 + 0.35 * ((progress_ratio - 0.90) / 0.10)
+	cur_size.x = min_size.x + ((maxWidth - min_size.x) * grow_ratio)
+	cur_size.y = min_size.y + ((maxHeight - min_size.y) * grow_ratio)
+
+	logger.log_debug("grow_ratio: %f" % grow_ratio)
+
 	# scale the source to the new size
 	scale_source(cur_size.x, cur_size.y)
 
@@ -978,8 +987,8 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 		var source_data = await obs.got_scene_item_source
 		if typeof(source_data) != TYPE_DICTIONARY:
 			# If the request to get the source ID failed, then reset playback
-			reset_playback()
-			wait_for_clip_transform = false
+			#reset_playback()
+			#wait_for_clip_transform = false
 			return
 		# If this transform is fro the correct source name, then update the clip ratio.
 		if wait_for_clip_transform and source_data.sourceName == source_name:
@@ -990,6 +999,7 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 				logger.log_debug("The new clip ratio is: %f" % cur_clip_ratio)
 			else:
 				logger.log_debug("The source width or height is zero, not updating clip ratio")
+
 
 ## Handles the event when a source filter's enable state changes.
 ## This function is called whenever a source filter is enabled or disabled.
