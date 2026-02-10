@@ -165,8 +165,8 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Fix issue with clip sometimes playing at wrong ratio
 - [x] Support grouped sources
 - [x] Avoid clip replays
+- [x] Add more animation options, such as "inflate" mode
 - [ ] Improve the Twitch connection process when failing or timing out
-- [ ] Add more animation options, such as "inflate" mode
 - [ ] Play a sound when growing
 - [ ] Command to add a clip to queue
 ```
