@@ -118,6 +118,9 @@ func load_settings() -> void:
 		_on_can_so_lead_mod_toggled(%CanSOLeadMod.button_pressed)
 		%CanSOStreamer.button_pressed = settings.get_value(section, "can_so_streamer", %CanSOStreamer.button_pressed)
 		_on_can_so_streamer_toggled(%CanSOStreamer.button_pressed)
+		%UseInflateAnimation.button_pressed = settings.get_value(section, "use_inflate_animation", %UseInflateAnimation.button_pressed)
+		_on_use_inflate_animation_toggled(%UseInflateAnimation.button_pressed)
+
 	## Re-enable saving.
 	is_loading = false
 
@@ -156,6 +159,7 @@ func save_settings() -> void:
 	settings.set_value(section, "can_so_mod", %CanSOMod.button_pressed)
 	settings.set_value(section, "can_so_lead_mod", %CanSOLeadMod.button_pressed)
 	settings.set_value(section, "can_so_streamer", %CanSOStreamer.button_pressed)
+	settings.set_value(section, "use_inflate_animation", %Commands.use_inflate_animation)
 	
 	## Save the settings to file.
 	settings.save(ProjectSettings.get_setting("application/config/settings_file"))
@@ -398,3 +402,8 @@ func _on_setup_obs_pressed() -> void:
 		%OBSWebsocketPanel.popup_centered()
 		%OBSWebsocketPanel.popup_window = false
 		%OBSWebsocketPanel.exclusive = true
+
+
+func _on_use_inflate_animation_toggled(toggled_on: bool) -> void:
+	save_settings()
+	%Commands.use_inflate_animation = toggled_on

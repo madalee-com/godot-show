@@ -105,6 +105,8 @@ var wait_for_clip_transform = false
 var user_clips = { }
 # True if we are trying to play a clip right now
 var try_clip_play = false
+# True if inflate animation is enabled
+var use_inflate_animation = false
 
 
 ## Main process function that handles frame timing and animation updates
@@ -461,24 +463,23 @@ func animate_scale(delta: float) -> void:
 	resize_time_elapsed += delta
 	# calculate the new size based on the elapsed time
 	var progress_ratio: float = resize_time_elapsed / time_to_scale
-	#cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
-	#cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
-
-	var grow_ratio: float = progress_ratio
-	if progress_ratio < 0.33:
-		grow_ratio = progress_ratio
-	elif progress_ratio < 0.53:
-		grow_ratio = 0.33 - 0.05 * ((progress_ratio - 0.33) / 0.20)
-	elif progress_ratio < 0.70:
-		grow_ratio = 0.28 + 0.42 * ((progress_ratio - 0.53) / 0.17)
-	elif progress_ratio < 0.90:
-		grow_ratio = 0.70 - 0.05 * ((progress_ratio - 0.70) / 0.20)
+	if !use_inflate_animation:
+		cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
+		cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
 	else:
-		grow_ratio = 0.65 + 0.35 * ((progress_ratio - 0.90) / 0.10)
-	cur_size.x = min_size.x + ((maxWidth - min_size.x) * grow_ratio)
-	cur_size.y = min_size.y + ((maxHeight - min_size.y) * grow_ratio)
-
-	logger.log_debug("grow_ratio: %f" % grow_ratio)
+		var grow_ratio: float = progress_ratio
+		if progress_ratio < 0.33:
+			grow_ratio = progress_ratio
+		elif progress_ratio < 0.53:
+			grow_ratio = 0.33 - 0.05 * ((progress_ratio - 0.33) / 0.20)
+		elif progress_ratio < 0.70:
+			grow_ratio = 0.28 + 0.42 * ((progress_ratio - 0.53) / 0.17)
+		elif progress_ratio < 0.90:
+			grow_ratio = 0.70 - 0.05 * ((progress_ratio - 0.70) / 0.20)
+		else:
+			grow_ratio = 0.65 + 0.35 * ((progress_ratio - 0.90) / 0.10)
+		cur_size.x = min_size.x + ((maxWidth - min_size.x) * grow_ratio)
+		cur_size.y = min_size.y + ((maxHeight - min_size.y) * grow_ratio)
 
 	# scale the source to the new size
 	scale_source(cur_size.x, cur_size.y)
@@ -982,16 +983,39 @@ func _on_setup_obs_button_pressed() -> void:
 func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 	if wait_for_clip_transform:
 		logger.log_debug("A scene item transform changed")
+
+		# deep breath.. FINE!!!
+		# get scene item list
+		# itterate the damn list to find the one that matches our scene item id
+		# see what the source name is for that scene item id.... (>_<)
+		var cur_source_name = ""
+		obs.get_scene_item_list(event_data.sceneName)
+		var scene_item_list = await obs.got_scene_item_list
+		if typeof(scene_item_list) == TYPE_ARRAY:
+			var i = scene_item_list.find_custom(func(e): return e.sceneItemId == event_data.sceneItemId)
+			# If we found our source, save its scene item ID and scene name
+			if i > -1:
+				cur_source_name = scene_item_list[i].sourceName
+		if cur_source_name == "":
+			obs.get_group_scene_item_list(event_data.sceneName)
+			scene_item_list = await obs.got_group_scene_item_list
+			if typeof(scene_item_list) == TYPE_ARRAY:
+				var i = scene_item_list.find_custom(func(e): return e.sceneItemId == event_data.sceneItemId)
+				# If we found our source, save its scene item ID and scene name
+				if i > -1:
+					cur_source_name = scene_item_list[i].sourceName
+		
+
 		# OBS doesn't send us the source id/name so we need to ask it for that
-		obs.get_scene_item_source(event_data.sceneName, event_data.sceneItemId)
-		var source_data = await obs.got_scene_item_source
-		if typeof(source_data) != TYPE_DICTIONARY:
+		#obs.get_scene_item_source(event_data.sceneName, event_data.sceneItemId)
+		#var source_data = await obs.got_scene_item_source
+		#if typeof(source_data) != TYPE_DICTIONARY:
 			# If the request to get the source ID failed, then reset playback
 			#reset_playback()
 			#wait_for_clip_transform = false
-			return
+		#	return
 		# If this transform is fro the correct source name, then update the clip ratio.
-		if wait_for_clip_transform and source_data.sourceName == source_name:
+		if wait_for_clip_transform and cur_source_name == source_name:
 			logger.log_debug("The transform was for our source, updating clip ratio")
 			if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
 				wait_for_clip_transform = false
