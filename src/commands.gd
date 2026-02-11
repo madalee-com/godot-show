@@ -1006,15 +1006,7 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 					cur_source_name = scene_item_list[i].sourceName
 		
 
-		# OBS doesn't send us the source id/name so we need to ask it for that
-		#obs.get_scene_item_source(event_data.sceneName, event_data.sceneItemId)
-		#var source_data = await obs.got_scene_item_source
-		#if typeof(source_data) != TYPE_DICTIONARY:
-			# If the request to get the source ID failed, then reset playback
-			#reset_playback()
-			#wait_for_clip_transform = false
-		#	return
-		# If this transform is fro the correct source name, then update the clip ratio.
+		# If this transform is fro, the correct source name, then update the clip ratio.
 		if wait_for_clip_transform and cur_source_name == source_name:
 			logger.log_debug("The transform was for our source, updating clip ratio")
 			if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
