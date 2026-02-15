@@ -254,4 +254,4 @@ This project is provided under the GNU General Public License v3.0. See the [LIC
 - [OBS Websocket GD](https://github.com/you-win/obs-websocket-gd) - Provides the GDScript OBS API
 - [godot-ansi-escape-to-bbcode](https://github.com/fbcosentino/godot-ansi-escape-to-bbcode) - Converts ANSI escape codes to BBCode for captured logs.
 - [Slide Whistle Sound](https://freesound.org/s/482881/) - Cartoon_Whistle.wav by Brsjak -- https://freesound.org/s/482881/ -- License: Attribution 4.0
-- [Balloon Sound](https://freesound.org/s/82154/)Balloon-Inflate-25.wav by Gniffelbaf -- https://freesound.org/s/82154/ -- License: Creative Commons 0
+- [Balloon Sound](https://freesound.org/s/82154/) - Balloon-Inflate-25.wav by Gniffelbaf -- https://freesound.org/s/82154/ -- License: Creative Commons 0
