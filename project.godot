@@ -22,6 +22,7 @@ config/settings_file="user://settings.cfg"
 
 [audio]
 
+buses/default_bus_layout="uid://bkpu3cjktblsg"
 general/text_to_speech=true
 
 [autoload]
@@ -38,10 +39,12 @@ window/size/window_width_override=870
 window/size/window_height_override=585
 window/energy_saving/keep_screen_on=false
 window/handheld/orientation=1
+display_server/subwindows/embed_subwindows=true
+display_server/size/mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/twitcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/scrolllistcontainer/plugin.cfg", "res://addons/twitcher/plugin.cfg")
 
 [gui]
 

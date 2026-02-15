@@ -18,6 +18,14 @@ extends Node
 const HttpUtil = preload("res://addons/twitcher/lib/http/http_util.gd")
 const TWITCH_VIDEO_API_CLIENT = "kd1unb4b3q4t58fwlpcbzcbnm76a8fp"
 const TWITCH_VIDEO_API_HASH = "36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11"
+const SHOUTOUT_COOLDOWN = 120
+const PER_USER_SHOUTOUT_COOLDOWN = 3600
+
+enum ClipAnimations {
+	LINEAR,
+	INFLATE,
+	TV,
+}
 
 signal bad_clip_state
 signal clip_started
@@ -29,6 +37,10 @@ signal obs_scale_filter_enable_state_changed
 
 ## Queue to hold clips waiting to be played
 var clip_queue = []
+## Queue to hold shoutouts waiting to be played
+var so_queue = []
+## Keeps up with the cooldowns for individual user shoutouts
+var user_so_cooldowns = []
 ## Flag indicating if a clip is currently playing
 var clip_playing = false
 ## Flag indicating if clip resizing animation is in progress
@@ -105,12 +117,29 @@ var wait_for_clip_transform = false
 var user_clips = { }
 # True if we are trying to play a clip right now
 var try_clip_play = false
-# True if inflate animation is enabled
+# Flag to enable/disable grow sound effect
+var use_grow_sound = false
+# Flag to control the clip animation type
+var use_linear_animation = true
+# Flag to control the inflate animation type
 var use_inflate_animation = false
+# Flag to control the TV animation type
+var use_tv_animation = false
+# Variable to track the current animation type
+var cur_animation_type = ClipAnimations.LINEAR
+# Flag to track if shoutout is on cooldown
+var so_on_cooldown = false
+# Variable to track the recent raider
+var recent_raider = ""
+# Flag to track if clip show is running
+var clip_show_running = false
+# Flag to track if self clip show is running
+var self_clip_show_running = false
 
 
 ## Main process function that handles frame timing and animation updates
 func _process(delta: float) -> void:
+	process_ui(delta)
 	# Update frame time and process animations if enough time has
 	# passed since last animation process
 	frame_time += delta
@@ -123,24 +152,14 @@ func _process(delta: float) -> void:
 	process_animations(delta)
 
 
-## Handles the shoutout command from Twitch
-func _on_shoutout_command_received(
-		_from_username: String,
-		_info: TwitchCommandInfo,
-		args: PackedStringArray,
-) -> void:
-	logger.log("Shoutout triggered")
-	# Get a random clip from the specified user
-	var clip = await get_random_clip_url(args[0])
-	if clip != null:
-		# Add the clip to the queue
-		clip_queue.append(clip)
-		logger.log(
-			"Added clip to queue: \"%s\" from %s clipped by %s"
-			% [clip.title, clip.broadcaster_name, clip.creator_name],
-		)
-		# If the queue is not currently processing, start it
-		process_queue()
+## Updates the UI elements related to shoutouts, such as countdown bars and text.
+func process_ui(_delta: float):
+	if so_on_cooldown:
+		%SOCountDownBar.value = %SOCountdownTimer.time_left
+		%SOCountDown.text = "%d seconds" % %SOCountdownTimer.time_left
+	else:
+		%SOCountDownBar.value = 0
+		%SOCountDown.text = "Ready for Shoutout"
 
 
 ## Handles the resetting variables if the clip is in an unexpected state
@@ -157,11 +176,14 @@ func _on_clip_ended() -> void:
 	clip_resizing = false
 	# prepare and start the fade process
 	clip_initial_fade_set = false
-	clip_fading_out = fade_out
+	if fade_out:
+		clip_fading_out = true
 	# fading is handled in the animation thread so it will start
 	# on it's own, we wait here for the fade animation to complete
 	logger.log_debug("await clip_end_delay seconds: %f" % clip_end_delay)
 	await get_tree().create_timer(clip_end_delay).timeout
+	if !fade_out:
+		fade_source(0.0)
 	# once the clip no longer shows on the screen, remove it from
 	# the media source to prevent looping playback
 	clear_clip()
@@ -170,11 +192,18 @@ func _on_clip_ended() -> void:
 		obs.set_source_filter_enabled(source_name, source_filter_name, false)
 		await obs.source_filter_enabled
 		logger.log_debug("Call to disable scale filter succeeded")
+
+	if clip_queue.is_empty():
+		if clip_show_running:
+			await add_random_clip_from_cache(1)
+		elif self_clip_show_running:
+			await add_random_self_clip(1)
+
 	# if the clip queue has more clips, play them after a timeout
 	if not clip_queue.is_empty():
 		logger.log_debug("Queue is not empty, processing queue after queue delay of %f seconds" % queue_delay)
 		await get_tree().create_timer(queue_delay).timeout
-		process_queue()
+		process_clip_queue()
 
 
 ## This function finds the scene and source ID for the clip to be displayed.
@@ -273,7 +302,7 @@ func _on_clip_started() -> void:
 			if !event_data.filterEnabled:
 				logger.log("Scale filter got set to diabled after trying to enable it")
 			else:
-				handle_clip_end()
+				handle_clip_started()
 		# Connect to the filter state changed function to detect the disable event
 		obs_scale_filter_enable_state_changed.connect(handle_clip_end_if_filter_enabled, CONNECT_ONE_SHOT)
 		# Set a timout of 2 seconds to wait for the source filter to get enabled
@@ -289,13 +318,14 @@ func _on_clip_started() -> void:
 		# Wait till the message goes through, if it fails just continue
 		if await obs.source_filter_enabled:
 			logger.log_debug("Command to enable scale filter succeeded")
-			# Don't handle the until the OBS event says the filter was disabled
+			# Don't handle the scaling until the OBS event says the filter was disabled
 			return
 		logger.log_debug("Error enabling scale filter")
-	handle_clip_end()
+	handle_clip_started()
 
 
-func handle_clip_end():
+## This function handles the clip started event and performs necessary actions
+func handle_clip_started():
 	logger.log_debug("Set media state timer to 1 second")
 	# Restart the media timer with a slower rate now that we are only checkng
 	# for bad or missed state changes
@@ -303,7 +333,8 @@ func handle_clip_end():
 	clip_initial_size_set = false
 	clip_resizing = obs_scale
 	clip_initial_fade_set = false
-	clip_fading_in = fade_in
+	if fade_in:
+		clip_fading_in = true
 
 
 ## Handles OBS media input ended event
@@ -412,10 +443,12 @@ func reset_playback():
 	if current_clip != null:
 		logger.log_debug("Add clip back to front of queue")
 		clip_queue.insert(0, current_clip)
+		%ClipQueueList.move_item(%ClipQueueList.add_item("%s - %s" % [current_clip.broadcaster_name, current_clip.title]), 0)
+
 	current_clip = null
 	logger.log_debug("Wait for %f seconds before processing queue" % queue_delay)
 	await get_tree().create_timer(queue_delay).timeout
-	process_queue()
+	process_clip_queue()
 
 
 ## Resets all animations and states
@@ -440,10 +473,27 @@ func animate_scale(delta: float) -> void:
 	# and then exit and wait for the next process time
 	if not clip_initial_size_set:
 		logger.log_debug("Clip initial size not set yet, doing so now with cur_clip_ratio: %f" % cur_clip_ratio)
+		var anim_list = []
+		if use_linear_animation:
+			anim_list.append(ClipAnimations.LINEAR)
+		if use_inflate_animation:
+			anim_list.append(ClipAnimations.INFLATE)
+		if use_tv_animation:
+			anim_list.append(ClipAnimations.TV)
+		cur_animation_type = anim_list.pick_random()
+		if use_grow_sound:
+			var effectBus = AudioServer.get_bus_index("Effect")
+			var effect: AudioEffectPitchShift = AudioServer.get_bus_effect(effectBus, 0)
+			var slen = %GrowSound.stream.get_length()
+			effect.pitch_scale = (time_to_scale / slen)
+			%GrowSound.pitch_scale = 1 / (time_to_scale / slen)
+			%GrowSound.play()
 		resize_time_elapsed = 0.0
 		cur_size = min_size
 		scale_source(cur_size.x, cur_size.y)
 		clip_initial_size_set = true
+		if !fade_in:
+			fade_source(1.0)
 		return
 
 	var maxWidth = max_size.x
@@ -455,31 +505,63 @@ func animate_scale(delta: float) -> void:
 
 	# if we have finished the animation time, stop the animation and reset variables.
 	if resize_time_elapsed >= time_to_scale:
-		logger.log_debug("Clip has reached maximum size, stopping scale animation.")
+		logger.log_debug("Clip has reached maximum time, stopping scale animation.")
 		resize_time_elapsed = 0.0
 		clip_resizing = false
+		if use_grow_sound:
+			if %GrowSound.playing:
+				%GrowSound.stop()
 		return
 	# keep track of the total time spent on the resize animation
 	resize_time_elapsed += delta
 	# calculate the new size based on the elapsed time
 	var progress_ratio: float = resize_time_elapsed / time_to_scale
-	if !use_inflate_animation:
-		cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
-		cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
-	else:
-		var grow_ratio: float = progress_ratio
-		if progress_ratio < 0.33:
-			grow_ratio = progress_ratio
-		elif progress_ratio < 0.53:
-			grow_ratio = 0.33 - 0.05 * ((progress_ratio - 0.33) / 0.20)
-		elif progress_ratio < 0.70:
-			grow_ratio = 0.28 + 0.42 * ((progress_ratio - 0.53) / 0.17)
-		elif progress_ratio < 0.90:
-			grow_ratio = 0.70 - 0.05 * ((progress_ratio - 0.70) / 0.20)
-		else:
-			grow_ratio = 0.65 + 0.35 * ((progress_ratio - 0.90) / 0.10)
-		cur_size.x = min_size.x + ((maxWidth - min_size.x) * grow_ratio)
-		cur_size.y = min_size.y + ((maxHeight - min_size.y) * grow_ratio)
+	match cur_animation_type:
+		ClipAnimations.LINEAR:
+			cur_size.x = min_size.x + ((maxWidth - min_size.x) * progress_ratio)
+			cur_size.y = min_size.y + ((maxHeight - min_size.y) * progress_ratio)
+		ClipAnimations.INFLATE:
+			var grow_ratio: float = progress_ratio
+			if progress_ratio < 0.33:
+				grow_ratio = progress_ratio
+			elif progress_ratio < 0.53:
+				if %GrowSound.playing:
+					%GrowSound.stop()
+				grow_ratio = 0.33 - 0.05 * ((progress_ratio - 0.33) / 0.20)
+			elif progress_ratio < 0.70:
+				grow_ratio = 0.28 + 0.42 * ((progress_ratio - 0.53) / 0.17)
+				if use_grow_sound:
+					if !%GrowSound.playing:
+						var effectBus = AudioServer.get_bus_index("Effect")
+						var effect: AudioEffectPitchShift = AudioServer.get_bus_effect(effectBus, 0)
+						var slen = %GrowSound.stream.get_length()
+						effect.pitch_scale = ((time_to_scale * (1 - grow_ratio)) / slen)
+						%GrowSound.pitch_scale = 1 / ((time_to_scale * (1 - grow_ratio)) / slen)
+						%GrowSound.play(slen * grow_ratio)
+			elif progress_ratio < 0.90:
+				if %GrowSound.playing:
+					%GrowSound.stop()
+				grow_ratio = 0.70 - 0.05 * ((progress_ratio - 0.70) / 0.20)
+			else:
+				grow_ratio = 0.65 + 0.35 * ((progress_ratio - 0.90) / 0.10)
+				if use_grow_sound:
+					if !%GrowSound.playing:
+						var effectBus = AudioServer.get_bus_index("Effect")
+						var effect: AudioEffectPitchShift = AudioServer.get_bus_effect(effectBus, 0)
+						var slen = %GrowSound.stream.get_length()
+						effect.pitch_scale = ((time_to_scale * (1 - grow_ratio)) / slen)
+						%GrowSound.pitch_scale = 1 / ((time_to_scale * (1 - grow_ratio)) / slen)
+						%GrowSound.play(slen * grow_ratio)
+			cur_size.x = min_size.x + ((maxWidth - min_size.x) * grow_ratio)
+			cur_size.y = min_size.y + ((maxHeight - min_size.y) * grow_ratio)
+		ClipAnimations.TV:
+			if progress_ratio < 0.33:
+				cur_size.x = min_size.x + ((maxWidth - min_size.x) * (progress_ratio * 3))
+				cur_size.y = min_size.y + ((maxHeight - min_size.y) * (progress_ratio * 0.10))
+			else:
+				cur_size.x = maxWidth
+				var sp = (min_size.y + ((maxHeight - min_size.y) * (0.33 * 0.10)))
+				cur_size.y = sp + ((maxHeight - sp) * ((progress_ratio - 0.33) / 0.66))
 
 	# scale the source to the new size
 	scale_source(cur_size.x, cur_size.y)
@@ -552,8 +634,6 @@ func scale_source(w: int, h: int):
 ## Sets the opacity of the fade filter in OBS.
 ## @param opacity The target opacity value (0.0 to 1.0).
 func fade_source(opacity: float):
-	if not (fade_in or fade_out):
-		return
 	if obs.obs_connected and obs_configured:
 		obs.set_source_filter_settings(source_name, fade_filter_name, { "opacity": opacity })
 
@@ -561,7 +641,7 @@ func fade_source(opacity: float):
 ## Processes the clip queue by playing the next clip if available.
 ## Waits for OBS to be ready before attempting to play.
 ## Does nothing if the queue is empty or if a clip is already playing.
-func process_queue():
+func process_clip_queue():
 	if try_clip_play:
 		logger.log_debug("We're already trying to play a clip, skip")
 		return
@@ -569,14 +649,69 @@ func process_queue():
 	if !obs.obs_connected or !obs_configured:
 		logger.log_debug("OBS isn't ready yet, wait for %d seconds before trying again" % queue_delay)
 		await get_tree().create_timer(queue_delay).timeout
-		process_queue()
+		process_clip_queue()
 		return
 	# If the queue is empty or a clip is already playing, do nothing
 	if clip_queue.is_empty() or clip_playing:
 		logger.log_debug("Queue is empty or a clip is already playing, nothing to do")
 		return
 	# Play the next clip from the queue
+	%ClipQueueList.remove_item(0)
 	play_clip(clip_queue.pop_front())
+
+
+## This function processes the shoutout queue
+func process_so_queue():
+	if so_queue.is_empty():
+		return
+	if so_on_cooldown:
+		return
+	# Check each user in the queue for shoutouts
+	for i in so_queue.size():
+		%SOQueueList.remove_item(i)
+		var cur_user = so_queue.pop_at(i)
+		var current_user: TwitchUser = await Twitch.get_current_user()
+		if current_user.display_name == cur_user:
+			continue # Skip if it's the current user
+
+		# Check if the user is on cooldown
+		if user_so_cooldowns.has(cur_user):
+			%SOQueueList.add_item("%s - On Cooldown" % cur_user)
+			get_tree().create_timer(PER_USER_SHOUTOUT_COOLDOWN).timeout.connect(func(): so_queue.append(cur_user))
+			continue # Skip if on cooldown
+
+		# Send the shoutout if not on cooldown
+		await send_so(cur_user)
+		so_on_cooldown = true
+		%SOCountDownBar.max_value = SHOUTOUT_COOLDOWN
+		%SOCountdownTimer.start(SHOUTOUT_COOLDOWN)
+		get_tree().create_timer(SHOUTOUT_COOLDOWN).timeout.connect(
+			func():
+				so_on_cooldown = false
+				process_so_queue()
+		)
+		return # Exit after sending the first shoutout
+
+
+## Sends a shoutout to a specified user.
+##
+## This function sends a shoutout to a specified Twitch user.
+## It first checks if the user exists and then attempts to send
+## a shoutout using the Twitch API.
+##
+## @param username The username of the Twitch user to shoutout.
+func send_so(username: String) -> bool:
+	var current_user: TwitchUser = await Twitch.get_current_user()
+	var user = await Twitch.get_user(username)
+	if user == null:
+		logger.log_error("Couldn't get user %s" % username)
+		return false
+	var response: BufferedHTTPClient.ResponseData = await Twitch.api.send_a_shoutout(current_user.id, current_user.id, user.id)
+	if response.response_code == 429:
+		%SOQueueList.add_item("%s - On Cooldown" % username)
+		get_tree().create_timer(PER_USER_SHOUTOUT_COOLDOWN).timeout.connect(func(): so_queue.append(username))
+		return false
+	return true
 
 
 ## This function plays a Twitch clip by setting the OBS input settings to the clip's URL.
@@ -650,8 +785,17 @@ func play_clip(clip: TwitchClip):
 	set_clip_url(clip)
 
 
+## This function sets the clip URL in OBS.
+##
+## This function sets the clip URL in OBS. It takes a TwitchClip object as an
+## argument and sets the input settings of the source to the clip's URL.
+##
+## Arguments:
+## clip: A TwitchClip object representing the clip to set as the URL.
+##
+## Example:
+## set_clip_url(clip)
 func set_clip_url(clip: TwitchClip = null):
-	# Set the clip URL
 	logger.log_debug("Actually set the clip URL in OBS now")
 	if clip != null:
 		obs.set_input_settings(source_name, { "input": clip.url, "is_local_file": false })
@@ -699,7 +843,9 @@ func get_random_clip_url(username: String) -> TwitchClip:
 		# Fetch the Twitch user information for the given username
 		var so_user: TwitchUser
 		so_user = await Twitch.get_user(username)
-
+		if so_user == null:
+			logger.log("Couldn't get shoutout for user: %s" % username)
+			return
 		# Fetch a list of clips for the user
 		var clips: TwitchGetClips.Response
 		var clip_options = TwitchGetClips.Opt.from_json(
@@ -729,6 +875,28 @@ func get_random_clip_url(username: String) -> TwitchClip:
 	user_clips[username].unplayed.erase(clip)
 	user_clips[username].played.append(clip)
 
+	var clip_url = await get_clip_url(clip.id)
+	if clip_url != null:
+		clip.url = clip_url
+		return clip
+
+	return null
+
+
+## This function fetches the clip URL for a given clip ID.
+## It uses the Twitch GraphQL API to retrieve the clip's access token.
+## The function constructs the clip URL by combining the source URL and the
+## access token and signature.
+##
+## Arguments:
+## clip_id: A string representing the clip ID.
+##
+## Returns:
+## A string representing the clip URL, or null if the request fails.
+##
+## Example:
+## var clip_url = get_clip_url("clip123")
+func get_clip_url(clip_id: String):
 	# Create a request to get the clip's access token
 	# this doesn't use the standard Twitch API, this is the GraphQL API
 	logger.log_debug("Creating a request to get the clip's access token")
@@ -739,7 +907,7 @@ func get_random_clip_url(username: String) -> TwitchClip:
 		JSON.stringify(
 			{
 				"operationName": "VideoAccessToken_Clip",
-				"variables": { "slug": clip.id },
+				"variables": { "slug": clip_id },
 				"extensions": {
 					"persistedQuery": {
 						"version": 1,
@@ -763,8 +931,8 @@ func get_random_clip_url(username: String) -> TwitchClip:
 			parsed.data.clip.playbackAccessToken.value.uri_encode(),
 			parsed.data.clip.playbackAccessToken.signature.uri_encode(),
 		]
-		clip.url = clip_url
-		return clip
+		return clip_url
+
 	logger.log_debug("Failed to get clip token from Twitch API")
 	return null
 
@@ -1004,7 +1172,6 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 				# If we found our source, save its scene item ID and scene name
 				if i > -1:
 					cur_source_name = scene_item_list[i].sourceName
-		
 
 		# If this transform is fro, the correct source name, then update the clip ratio.
 		if wait_for_clip_transform and cur_source_name == source_name:
@@ -1023,3 +1190,258 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 func _on_obs_source_filter_enable_state_changed(event_data: Variant) -> void:
 	if event_data.sourceName == source_name:
 		obs_scale_filter_enable_state_changed.emit(event_data)
+
+
+func add_random_clip(username: String, count: int = 1):
+	for each in count:
+		# Get a random clip from the specified user
+		var clip = await get_random_clip_url(username)
+		if clip != null:
+			# Add the clip to the queue
+			clip_queue.append(clip)
+			%ClipQueueList.add_item("%s - %s" % [clip.broadcaster_name, clip.title])
+			logger.log(
+				"Added clip to queue: \"%s\" from %s clipped by %s"
+				% [clip.title, clip.broadcaster_name, clip.creator_name],
+			)
+	# If the queue is not currently processing, start it
+	process_clip_queue()
+
+
+## Adds random clips from the user's that have already had clips
+## played this session.
+##
+## @param count The number of clips to add from the cache.
+func add_random_clip_from_cache(count: int = 1):
+	for each in count:
+		if user_clips.is_empty():
+			return
+		var cur_user_clips = user_clips[user_clips.keys().pick_random()]
+		var cur_user
+		if cur_user_clips.unplayed.is_empty():
+			cur_user = cur_user_clips.played[0].broadcaster_id
+		else:
+			cur_user = cur_user_clips.unplayed[0].broadcaster_id
+		await add_random_clip(cur_user)
+
+
+## Adds random clips from the user's own account.
+##
+## @param count The number of clips to add from the user's own account.
+func add_random_self_clip(count: int = 1):
+	var user = await Twitch.get_current_user()
+	await add_random_clip(user.display_name, count)
+
+
+## Parse a Twitch clip URL and extract the clip ID.
+##
+## @param clip_url The URL of the Twitch clip to parse.
+## @return The clip ID extracted from the URL, or null if parsing fails.
+func parse_twitch_clip_url(clip_url: String):
+	var clip_start = clip_url.find("clip/")
+	if clip_start == -1:
+		return null
+	var clip_end = clip_url.rfind("?")
+	if clip_end == -1:
+		return clip_url.substr(clip_start + 5)
+	return clip_url.substr(clip_start + 5, clip_end - (clip_start + 5))
+
+
+## Add a clip to the queue using a Twitch clip URL
+##
+## @param clip_id_url The URL of the clip to add. Must be a valid Twitch clip URL.
+func add_clip(clip_id_url: String):
+	var clip_id = parse_twitch_clip_url(clip_id_url)
+	if clip_id == null:
+		logger.log("Couldn't parse clip URL")
+		return
+
+	var clips: TwitchGetClips.Response
+	var clip_options: TwitchGetClips.Opt = TwitchGetClips.Opt.new()
+	clip_options.id = [clip_id]
+	clip_options.first = 1
+
+	logger.log_debug("Waiting for Twitch API response")
+	clips = await Twitch.api.get_clips(clip_options)
+
+	if clips.data.is_empty():
+		logger.log_error("Couldn't find clip by id")
+		return
+
+	var clip = clips.data[0]
+
+	var clip_url = await get_clip_url(clip_id)
+	if clip_url != null:
+		clip.url = clip_url
+		clip_queue.append(clip)
+		%ClipQueueList.add_item("%s - %s" % [clip.broadcaster_name, clip.title])
+		return
+	logger.log_error("Error retrieving clip from URL")
+
+## Queues a shoutout for a specific user.
+## This function adds the user to the shoutout queue and processes the queue if necessary.
+##
+## @param username The Twitch username of the user to queue for a shoutout.
+func queue_shoutout(username: String):
+	logger.log("Queueing shoutout")
+	if !so_queue.has(username):
+		%SOQueueList.add_item("%s" % username)
+		so_queue.append(username)
+	process_so_queue()
+
+
+## Handles the event when a shoutout command is received.
+## This function is called when a shoutout command is sent to the script.
+## It queues the user for a shoutout and processes the queue if necessary.
+##
+## @param _from_username The username of the user who sent the shoutout command.
+## @param _info The information about the shoutout command.
+## @param args An array of strings containing the arguments of the shoutout command.
+## @return void
+func _on_shoutout_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseQueueSOCmd.button_pressed:
+		queue_shoutout(args[0])
+		logger.log("Shoutout command triggered")
+
+## Handles the event when a random clip command is received.
+## This function is called when a random clip command is sent to the script.
+## It adds random clips from the specified user to the queue.
+##
+## @param _from_username The username of the user who sent the random clip command.
+## @param _info The information about the random clip command.
+## @param args An array of strings containing the arguments of the random clip command.
+## @return void
+func _on_random_clip_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseRandomClipCmd.button_pressed:
+		var clip_count = 1
+		if args.size() > 1 and args[1].is_valid_int():
+			clip_count = args[1].to_int()
+		add_random_clip(args[0], clip_count)
+		logger.log("Random clip command triggered")
+
+## Handles the event when a shoutout and random clip command is received.
+## This function is called when a shoutout and random clip command is sent to the script.
+## It queues the user for a shoutout and adds random clips from the user to the queue.
+##
+## @param _from_username The username of the user who sent the shoutout and random clip command.
+## @param _info The information about the shoutout and random clip command.
+## @param args An array of strings containing the arguments of the shoutout and random clip command.
+## @return void
+func _on_so_random_clip_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseSORandomClipCmd.button_pressed:
+		queue_shoutout(args[0])
+		var clip_count = 1
+		if args.size() > 1 and args[1].is_valid_int():
+			clip_count = args[1].to_int()
+		add_random_clip(args[0], clip_count)
+		logger.log("Shoutout and Random clip command triggered")
+
+## Handles the event when a clip command is received.
+## This function is called when a clip command is sent to the script.
+## It adds the clip from the specified URL to the queue.
+##
+## @param _from_username The username of the user who sent the clip command.
+## @param _info The information about the clip command.
+## @param args An array of strings containing the arguments of the clip command.
+## @return void
+func _on_clip_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseClipCmd.button_pressed:
+		await add_clip(args[0])
+		process_clip_queue()
+		logger.log("Queue clip command triggered")
+
+## Adds random clips from the user's recent raiders.
+## This function adds random clips from the user's recent raiders.
+##
+## @param count The number of clips to add from the user's recent raiders.
+func _on_raider_random_clip_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseRaiderClipCmd.button_pressed:
+		if recent_raider.is_empty():
+			return
+		var clip_count = 1
+		if args.size() > 1 and args[1].is_valid_int():
+			clip_count = args[1].to_int()
+		add_random_clip(recent_raider, clip_count)
+
+## Handles the event when a raider shoutout command is received.
+## This function is called when a raider shoutout command is sent to the script.
+## It queues the raider for a shoutout and processes the queue if necessary.
+##
+## @param _from_username The username of the user who sent the raider shoutout command.
+## @param _info The information about the raider shoutout command.
+## @param _args An array of strings containing the arguments of the raider shoutout command.
+## @return void
+func _on_raider_so_command_received(_from_username: String, _info: TwitchCommandInfo, _args: PackedStringArray) -> void:
+	if %UseRaiderSOCmd.button_pressed:
+		if recent_raider.is_empty():
+			return
+		queue_shoutout(recent_raider)
+
+## Handles the event when a raider shoutout and random clip command is received.
+## This function is called when a raider shoutout and random clip command is sent to the script.
+## It queues the raider for a shoutout and adds random clips from the raider to the queue.
+##
+## @param _from_username The username of the user who sent the raider shoutout and random clip command.
+## @param _info The information about the raider shoutout and random clip command.
+## @param args An array of strings containing the arguments of the raider shoutout and random clip command.
+## @return void
+func _on_raider_so_random_clip_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseRaiderSORandomCmd.button_pressed:
+		if recent_raider.is_empty():
+			return
+		queue_shoutout(recent_raider)
+		var clip_count = 1
+		if args.size() > 1 and args[1].is_valid_int():
+			clip_count = args[1].to_int()
+		add_random_clip(recent_raider, clip_count)
+
+## Handles the event when a clip show command is received.
+## This function is called when a clip show command is sent to the script.
+## It adds random clips from the cache to the queue.
+##
+## @param _from_username The username of the user who sent the clip show command.
+## @param _info The information about the clip show command.
+## @param args An array of strings containing the arguments of the clip show command.
+## @return void
+func _on_clip_show_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseClipShowCmd.button_pressed:
+		self_clip_show_running = false
+		if args.size() > 0 and args[0].is_valid_int():
+			add_random_clip_from_cache(args[0].to_int())
+			return
+		add_random_clip_from_cache(1)
+		clip_show_running = true
+		logger.log("Clip show command triggered")
+		process_clip_queue()
+
+## Handles the event when a stop clip show command is received.
+## This function is called when a stop clip show command is sent to the script.
+## It stops the clip show.
+##
+## @param _from_username The username of the user who sent the stop clip show command.
+## @param _info The information about the stop clip show command.
+## @param _args An array of strings containing the arguments of the stop clip show command.
+## @return void
+func _on_stop_clip_show_command_received(_from_username: String, _info: TwitchCommandInfo, _args: PackedStringArray) -> void:
+	if %UseStopClipShowCmd.button_pressed:
+		clip_show_running = false
+		self_clip_show_running = false
+
+## Handles the event when a self clip show command is received.
+## This function is called when a self clip show command is sent to the script.
+## It adds random clips from the cache to the queue.
+##
+## @param _from_username The username of the user who sent the self clip show command.
+## @param _info The information about the self clip show command.
+## @param args An array of strings containing the arguments of the self clip show command.
+## @return void
+func _on_self_clip_show_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
+	if %UseSelfClipShowCmd.button_pressed:
+		clip_show_running = false
+		if args.size() > 0 and args[0].is_valid_int():
+			add_random_self_clip(args[0].to_int())
+			return
+		add_random_self_clip(1)
+		self_clip_show_running = true
+		logger.log("Self clip show command triggered")
+		process_clip_queue()

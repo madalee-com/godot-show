@@ -13,14 +13,22 @@
 
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
 extends Control
 
 ## Logger instance
 @onready var logger = %AppLogger
 
+enum GrowSoundOptionIds {
+	NONE,
+	CUSTOM,
+	SLIDE_WHISTLE,
+	BALLOON,
+}
+
 ## Set to true when loading settings to prevent save loops.
 var is_loading = false
+
+var custom_sound_set = false
 
 
 ## Called when the node enters the scene tree for the first time.
@@ -32,6 +40,7 @@ func _on_ready() -> void:
 	## connect to twitch signals
 	Twitch.auth.token_handler.unauthenticated.connect(_on_token_handler_unauthenticated)
 	Twitch.auth.token_handler.token_resolved.connect(_on_token_resolved)
+	Twitch.eventsub.event_received.connect(_on_twitch_eventsub_event)
 	load_settings()
 	## Auto-connect to Twitch if enabled
 	if %AutoConnect.button_pressed:
@@ -41,9 +50,11 @@ func _on_ready() -> void:
 	## Enable OBS connection
 	%Obs.enable_connect()
 
+
 func _on_token_handler_unauthenticated():
 	%TwitchConnect.disabled = false
 	refresh_twitch_token_status()
+
 
 ## Settings Load/Save
 func load_settings() -> void:
@@ -118,11 +129,51 @@ func load_settings() -> void:
 		_on_can_so_lead_mod_toggled(%CanSOLeadMod.button_pressed)
 		%CanSOStreamer.button_pressed = settings.get_value(section, "can_so_streamer", %CanSOStreamer.button_pressed)
 		_on_can_so_streamer_toggled(%CanSOStreamer.button_pressed)
+		%UseLinearAnimation.button_pressed = settings.get_value(section, "use_linear_animation", %UseLinearAnimation.button_pressed)
+		_on_use_linear_animation_toggled(%UseLinearAnimation.button_pressed)
 		%UseInflateAnimation.button_pressed = settings.get_value(section, "use_inflate_animation", %UseInflateAnimation.button_pressed)
 		_on_use_inflate_animation_toggled(%UseInflateAnimation.button_pressed)
+		%UseTVAnimation.button_pressed = settings.get_value(section, "use_tv_animation", %UseTVAnimation.button_pressed)
+		_on_use_tv_animation_toggled(%UseTVAnimation.button_pressed)
+		%GrowSoundPath.text = settings.get_value(section, "grow_sound_path", %GrowSoundPath.text)
+		%GrowSoundSource.selected = %GrowSoundSource.get_item_index(settings.get_value(section, "grow_sound_source", %GrowSoundSource.get_selected_id()))
+		set_grow_sound_from_id(%GrowSoundSource.get_selected_id())
+		%UseRandomClipCmd.button_pressed = settings.get_value(section, "use_random_clip", %UseRandomClipCmd.button_pressed)
+		%UseQueueSOCmd.button_pressed = settings.get_value(section, "use_queue_so", %UseQueueSOCmd.button_pressed)
+		%UseSORandomClipCmd.button_pressed = settings.get_value(section, "use_so_random_clip", %UseSORandomClipCmd.button_pressed)
+		%UseClipCmd.button_pressed = settings.get_value(section, "use_clip", %UseClipCmd.button_pressed)
+		%UseRaiderClipCmd.button_pressed = settings.get_value(section, "use_raider_clip", %UseRaiderClipCmd.button_pressed)
+		%UseRaiderSOCmd.button_pressed = settings.get_value(section, "use_raider_so", %UseRaiderSOCmd.button_pressed)
+		%UseRaiderSORandomCmd.button_pressed = settings.get_value(section, "use_raider_so_random_clip", %UseRaiderSORandomCmd.button_pressed)
+		%UseClipShowCmd.button_pressed = settings.get_value(section, "use_clip_show", %UseClipShowCmd.button_pressed)
+		%UseStopClipShowCmd.button_pressed = settings.get_value(section, "use_stop_clip_show", %UseStopClipShowCmd.button_pressed)
+		%UseSelfClipShowCmd.button_pressed = settings.get_value(section, "use_self_clip_show", %UseSelfClipShowCmd.button_pressed)
+		%RandomClipCmd.text = settings.get_value(section, "random_clip_cmd", %RandomClipCmd.text)
+		_on_random_clip_cmd_text_changed(%RandomClipCmd.text)
+		%QueueSOCmd.text = settings.get_value(section, "queue_so_cmd", %QueueSOCmd.text)
+		_on_queue_so_cmd_text_changed(%QueueSOCmd.text)
+		%SORandomClipCmd.text = settings.get_value(section, "so_random_clip_cmd", %SORandomClipCmd.text)
+		_on_so_random_clip_cmd_text_changed(%SORandomClipCmd.text)
+		%ClipCmd.text = settings.get_value(section, "clip_cmd", %ClipCmd.text)
+		_on_clip_cmd_text_changed(%ClipCmd.text)
+		%RaiderClipCmd.text = settings.get_value(section, "raider_clip_cmd", %RaiderClipCmd.text)
+		_on_raider_clip_cmd_text_changed(%RaiderClipCmd.text)
+		%RaiderSOCmd.text = settings.get_value(section, "raider_so_cmd", %RaiderSOCmd.text)
+		_on_raider_so_cmd_text_changed(%RaiderSOCmd.text)
+		%RaiderSORandomCmd.text = settings.get_value(section, "raider_so_random_clip_cmd", %RaiderSORandomCmd.text)
+		_on_raider_so_random_cmd_text_changed(%RaiderSORandomCmd.text)
+		%ClipShowCmd.text = settings.get_value(section, "clip_show_cmd", %ClipShowCmd.text)
+		_on_clip_show_cmd_text_changed(%ClipShowCmd.text)
+		%StopClipShowCmd.text = settings.get_value(section, "stop_clip_show_cmd", %StopClipShowCmd.text)
+		_on_stop_clip_show_cmd_text_changed(%StopClipShowCmd.text)
+		%SelfClipShowCmd.text = settings.get_value(section, "self_clip_show_cmd", %SelfClipShowCmd.text)
+		_on_self_clip_show_cmd_text_changed(%SelfClipShowCmd.text)
+
+		
 
 	## Re-enable saving.
 	is_loading = false
+
 
 ## Save settings to file.
 func save_settings() -> void:
@@ -159,10 +210,37 @@ func save_settings() -> void:
 	settings.set_value(section, "can_so_mod", %CanSOMod.button_pressed)
 	settings.set_value(section, "can_so_lead_mod", %CanSOLeadMod.button_pressed)
 	settings.set_value(section, "can_so_streamer", %CanSOStreamer.button_pressed)
-	settings.set_value(section, "use_inflate_animation", %Commands.use_inflate_animation)
+	settings.set_value(section, "use_linear_animation", %UseLinearAnimation.button_pressed)
+	settings.set_value(section, "use_inflate_animation", %UseInflateAnimation.button_pressed)
+	settings.set_value(section, "use_tv_animation", %UseTVAnimation.button_pressed)
+	settings.set_value(section, "grow_sound_source", %GrowSoundSource.get_selected_id())
+	settings.set_value(section, "grow_sound_path", %GrowSoundPath.text)
+	settings.set_value(section, "use_linear_animation", %UseLinearAnimation.button_pressed)
+	settings.set_value(section, "use_random_clip", %UseRandomClipCmd.button_pressed)
+	settings.set_value(section, "use_queue_so", %UseQueueSOCmd.button_pressed)
+	settings.set_value(section, "use_so_random_clip", %UseSORandomClipCmd.button_pressed)
+	settings.set_value(section, "use_clip", %UseClipCmd.button_pressed)
+	settings.set_value(section, "use_raider_clip", %UseRaiderClipCmd.button_pressed)
+	settings.set_value(section, "use_raider_so", %UseRaiderSOCmd.button_pressed)
+	settings.set_value(section, "use_raider_so_random_clip", %UseRaiderSORandomCmd.button_pressed)
+	settings.set_value(section, "use_clip_show", %UseClipShowCmd.button_pressed)
+	settings.set_value(section, "use_stop_clip_show", %UseStopClipShowCmd.button_pressed)
+	settings.set_value(section, "use_self_clip_show", %UseSelfClipShowCmd.button_pressed)
+	settings.set_value(section, "random_clip_cmd", %RandomClipCmd.text)
+	settings.set_value(section, "queue_so_cmd", %QueueSOCmd.text)
+	settings.set_value(section, "so_random_clip_cmd", %SORandomClipCmd.text)
+	settings.set_value(section, "clip_cmd", %ClipCmd.text)
+	settings.set_value(section, "raider_clip_cmd", %RaiderClipCmd.text)
+	settings.set_value(section, "raider_so_cmd", %RaiderSOCmd.text)
+	settings.set_value(section, "raider_so_random_clip_cmd", %RaiderSORandomCmd.text)
+	settings.set_value(section, "clip_show_cmd", %ClipShowCmd.text)
+	settings.set_value(section, "stop_clip_show_cmd", %StopClipShowCmd.text)
+	settings.set_value(section, "self_clip_show_cmd", %SelfClipShowCmd.text)
 	
+
 	## Save the settings to file.
 	settings.save(ProjectSettings.get_setting("application/config/settings_file"))
+
 
 func refresh_twitch_token_status():
 	Twitch.auth.token.load_tokens()
@@ -170,6 +248,7 @@ func refresh_twitch_token_status():
 		%ForgetTwitchLogin.disabled = false
 	else:
 		%ForgetTwitchLogin.disabled = true
+
 
 ## Twitch Setup
 func twitch_setup() -> bool:
@@ -180,6 +259,7 @@ func twitch_setup() -> bool:
 		var user = await Twitch.get_current_user()
 		logger.log_success("Connected to Twitch")
 		%ForgetTwitchLogin.disabled = false
+
 		## Subscribe to chat message events
 		await Twitch.subscribe_event(
 			TwitchEventsubDefinition.CHANNEL_CHAT_MESSAGE,
@@ -188,30 +268,40 @@ func twitch_setup() -> bool:
 				"user_id": user.id,
 			},
 		)
+		await Twitch.subscribe_event(
+			TwitchEventsubDefinition.CHANNEL_RAID,
+			{
+				"to_broadcaster_user_id": user.id
+			},
+		)
 		return true
 	refresh_twitch_token_status()
 	logger.log_error("Error connecting to Twitch")
 	%TwitchConnect.disabled = false
 	return false
 
+
 func forget_twitch():
-	#Twitch.eventsub.close_connection()
 	await Twitch.unsetup()
 	Twitch.auth.token.remove_tokens()
 	refresh_twitch_token_status()
 	%TwitchConnect.disabled = false
 
+
 func _on_token_resolved(tokens) -> void:
 	if tokens == null:
 		%TwitchConnect.disabled = false
+
 
 ## Handle Twitch connect button
 func _on_twitch_connect_pressed() -> void:
 	twitch_setup()
 
+
 ## Logger handlers
 func _log_message(message: String, _error: bool):
 	logger.append_text("[code]" + logger.ansi_to_bbcode(message) + "[/code]")
+
 
 func _log_error(
 		_function: String,
@@ -224,6 +314,7 @@ func _log_error(
 		_script_backtraces: Array[ScriptBacktrace],
 ):
 	logger.log_error("[code]Error occured[/code]")
+
 
 ## UI Handlers
 func _on_auto_connect_toggled(_toggled_on: bool) -> void:
@@ -345,7 +436,10 @@ func refresh_so_permissions() -> void:
 		flag += TwitchCommandBase.PermissionFlag.STREAMER
 	if %CanSOViewer.button_pressed:
 		flag = 0
-	$Commands/Shoutout.permission_level = flag
+	for cur_cmd in $Commands.get_children():
+		if cur_cmd.get_class() == "TwitchCommand":
+			cur_cmd.permission_level = flag
+
 
 func _on_can_so_viewer_toggled(_toggled_on: bool) -> void:
 	if _toggled_on:
@@ -405,5 +499,214 @@ func _on_setup_obs_pressed() -> void:
 
 
 func _on_use_inflate_animation_toggled(toggled_on: bool) -> void:
+	validate_grow_animation_selection()
 	save_settings()
 	%Commands.use_inflate_animation = toggled_on
+
+
+func _on_grow_sound_source_item_selected(_index: int) -> void:
+	set_grow_sound_from_id(%GrowSoundSource.get_selected_id())
+	if %GrowSoundSource.get_selected_id() != GrowSoundOptionIds.NONE:
+		if %GrowSoundSource.get_selected_id() == GrowSoundOptionIds.CUSTOM and !custom_sound_set:
+			return
+		reset_grow_sound_pitches()
+		%GrowSound.play()
+	save_settings()
+
+
+func set_grow_sound_from_id(id: int):
+	if id == GrowSoundOptionIds.CUSTOM:
+		%GrowSoundSelector.disabled = false
+		%GrowSoundPath.editable = true
+	else:
+		%GrowSoundSelector.disabled = true
+		%GrowSoundPath.editable = false
+
+	%Commands.use_grow_sound = true
+	match id:
+		GrowSoundOptionIds.SLIDE_WHISTLE:
+			%GrowSound.stream = AudioStreamOggVorbis.load_from_file("res://assets/audio/cartoon_whistle.ogg")
+		GrowSoundOptionIds.BALLOON:
+			%GrowSound.stream = AudioStreamOggVorbis.load_from_file("res://assets/audio/balloon-inflate.ogg")
+		GrowSoundOptionIds.CUSTOM:
+			set_custom_grow_sound()
+		GrowSoundOptionIds.NONE:
+			%Commands.use_grow_sound = false
+
+
+func set_custom_grow_sound():
+	if FileAccess.file_exists(%GrowSoundPath.text):
+		if %GrowSoundPath.text.matchn("*ogg"):
+			%GrowSound.stream = AudioStreamOggVorbis.load_from_file(%GrowSoundPath.text)
+		elif %GrowSoundPath.text.matchn("*mp3"):
+			%GrowSound.stream = AudioStreamMP3.load_from_file(%GrowSoundPath.text)
+	else:
+		%GrowSound.stream = null
+	if %GrowSound.stream != null:
+		custom_sound_set = true
+		if %GrowSoundSource.get_selected_id() == GrowSoundOptionIds.CUSTOM:
+			%Commands.use_grow_sound = true
+	else:
+		custom_sound_set = false
+		%Commands.use_grow_sound = false
+
+
+func _on_grow_sound_selector_pressed() -> void:
+	%GrowSoundSelector/FileDialog.show()
+
+
+func _on_file_dialog_file_selected(path: String) -> void:
+	%GrowSoundPath.text = path
+	set_custom_grow_sound()
+	save_settings()
+	if custom_sound_set:
+		reset_grow_sound_pitches()
+		%GrowSound.play()
+
+
+func _on_grow_sound_path_text_changed(_new_text: String) -> void:
+	save_settings()
+	set_custom_grow_sound()
+	if custom_sound_set:
+		reset_grow_sound_pitches()
+		%GrowSound.play()
+
+
+func reset_grow_sound_pitches():
+	var effectBus = AudioServer.get_bus_index("Effect")
+	var effect: AudioEffectPitchShift = AudioServer.get_bus_effect(effectBus, 0)
+	effect.pitch_scale = 1.0
+	%GrowSound.pitch_scale = 1.0
+
+
+func _on_use_linear_animation_toggled(toggled_on: bool) -> void:
+	validate_grow_animation_selection()
+	save_settings()
+	%Commands.use_linear_animation = toggled_on
+
+
+func _on_use_tv_animation_toggled(toggled_on: bool) -> void:
+	validate_grow_animation_selection()
+	save_settings()
+	%Commands.use_tv_animation = toggled_on
+
+
+func validate_grow_animation_selection():
+	if is_loading:
+		return
+	if %UseLinearAnimation.button_pressed or %UseInflateAnimation.button_pressed or %UseTVAnimation.button_pressed:
+		return
+	%UseLinearAnimation.button_pressed = true
+
+
+func _on_random_clip_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/RandomClip.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_queue_so_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/Shoutout.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_so_random_clip_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/SORandomClip.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_clip_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/Clip.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_raider_clip_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/RaiderRandomClip.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_raider_so_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/RaiderSO.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_raider_so_random_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/RaiderSORandomClip.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_clip_show_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/ClipShow.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+
+func _on_stop_clip_show_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/StopClipShow.command = new_text if new_text.left(1) != "!" else new_text.substr(1)
+
+func _on_use_random_clip_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_queue_so_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_so_random_clip_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_clip_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_raider_clip_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_raider_so_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_raider_so_random_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_clip_show_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_use_stop_clip_show_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+func _on_twitch_eventsub_event(data: TwitchEventsub.Event) -> void:
+	if data.type == TwitchEventsubDefinition.CHANNEL_RAID:
+		%Commands.recent_raider = data.data["user_name"]
+
+
+func _on_use_self_clip_show_cmd_toggled(_toggled_on: bool) -> void:
+	save_settings()
+
+
+func _on_self_clip_show_cmd_text_changed(new_text: String) -> void:
+	if new_text.is_empty():
+		return
+	save_settings()
+	$Commands/SelfClipShow.command = new_text if new_text.left(1) != "!" else new_text.substr(1)

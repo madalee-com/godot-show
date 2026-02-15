@@ -20,6 +20,8 @@ Show-off random clips from other streamers when you shout them out
 - **Cross-platform:** Thanks to being based on Godot, the app is available for most OS
 - **Easy Twitch Login:** Unlike other tools, Godot-show has a 1 button connect to Twitch
 - **Direct OBS integration:** Godot-show plays the clips in an OBS Media Source
+- **Queue up shoutouts:** If clips are on cooldown, they will be sent once the cooldown is over
+- **Play a clip show:** Continuously play clips from the Streamer or multiple users
 
 ![Godot Show in Action](./readme-assets/godot-show-in-action.gif)
 
@@ -81,45 +83,95 @@ You can set this up manually, but we recommend you let Godot-Show set it up for 
 2. A browser window/tab will open asking if you authorize Godot-Show to do it's stuff, click Authorize NOTE: If you are using the WebApp this will provide you with a code to enter in to Twitch, instead.
 3. If the messages "Connection to OBS established" and "Connected to Twitch" both show in the log window, then you are ready to use Godot-Show
 
-## Additional Settings
-![Settings Screen](readme-assets/settings.png)
+## Home Tab
+![Home Tab](readme-assets/home-tab.png)
+| Control | Description |
+|---------|-------------|
+| `Connect to Twitch` | Press this to get connected to Twitch |
+| `Connect on Startup` | Enable this to automatically connect to Twitch on startup |
+| `Forget Twitch Login` | If you need to switch accounts, or disconnect this account, click this |
+## Queue Tab
+![Queue Tab](readme-assets/queue-tab.png)
+| Control | Description |
+|---------|-------------|
+| `Clip Queue` | Shows the clips that are waiting to be played |
+| `Shoutout Queue` | Shows streamers who are queued to be shouted out |
+| `Ready for Shoutout/Time Left Bar` | Shows how long till the next shoutout |
+## Connections Tab
+![Settings Tab](readme-assets/connections-tab.png)
 ### OBS Connection Info
 | Settings | Default | Description |
-|--------|---------|-------------|
+|----------|---------|-------------|
 | `Hostname` | 127.0.0.1 | IP Address of OBS WebSocket Server |
 | `Port` | 4455 | Port of OBS WebSocket Server |
 | `Password` | password | Password of OBS WebSocket Server.  Leave blank if none. |
 ### OBS Source Settings
 | Settings | Default | Description |
-|--------|---------|-------------|
+|----------|---------|-------------|
 | `Source Name` | Godot-Show | The name of the Media Source you added in OBS |
 | `Scaling Filter Name` | Scaling/Aspect Ratio | The name of the Scaling/Aspect Ratio filter |
 | `Opacity Filter Name` | Color Correction | The name of the Color Correction filter |
 ### Who can trigger the clip?
 | Settings | Default | Description |
-|--------|---------|-------------|
+|----------|---------|-------------|
 | `Everyone` | Disabled | Allow all viewers to use the !so command for clips|
 | `VIPs` | Disabled | Allow VIPs to use the !so command for clips |
 | `Subscribers` | Disabled | Allow subscribers to use the !so command for clips |
 | `Mods` | Enabled | Allow mods to use the !so command for clips |
 | `Lead Mods` | Enabled | Allow lead mods to use the !so command for clips |
 | `Streamer` | Enabled | Allow streamer to use the !so command for clips |
+## Animations Tab
+![Animations Tab](readme-assets/animations-tab.png)
+## Animation Settings
+| Settings | Default | Description |
+|----------|---------|-------------|
+| `Grow on Show` | Enabled | If enabled, the clip will grow/scale up to full size as it's shown |
+| `Fade In` | Enabled | If enabled, the clip will Fade In when being shown |
+| `Fade Out` | Enabled | If enabled, the clip will Fade Out at the end |
 ### Timing Settings
 | Settings | Default | Description |
-|--------|---------|-------------|
+|----------|---------|-------------|
 | `Time to Grow` | 2.0 | Time the video should take to Grow/Scale to full size |
 | `Time to Fade` | 1.0 | Time the video should take to fade in/out |
 | `Framerate` | 60 | How often to refresh the animations |
 | `Delay Between Clips` | 1.0 | How long to wait till playing the next clip in queue |
 | `Delay Before Clip Clear` | 1.5 | How long to wait before clearing the clip from the screen.  If using Fade Out, set this longer than the Time to Fade |
-## Animation Settings
+## Grow Settings
 | Settings | Default | Description |
-|--------|---------|-------------|
+|----------|---------|-------------|
 | `Minimum Width/Height` | 1x1 | The initial size of the clip when Growings/Scaling in |
 | `Maximum Width/Height` | 800x450 | The max/full size of the clip when Growings/Scaling in |
-| `Grow on Show` | Enabled | If enabled, the clip with grow/scale up to full size as it's shown |
-| `Fade In` | Enabled | If enabled, the clip will Fade In when being shown |
-| `Fade Out` | Enabled | If enabled, the clip will Fade Out at the end |
+## Grow Animations
+If more than one of these is selected, one will be randomly chosen each time a clip plays.
+| Settings | Default | Description |
+|----------|---------|-------------|
+| `Linear` | Enabled | The clip will simply, linearly scale from small to full size |
+| `Inflate` | Disabled | The clip will grow like a baloon |
+| `Television` | Disabled | The clip will expand like an old TV picture |
+## Grow Sound
+If enabled, a sound will play as the clip grows on the screen.  The way the sound plays depends on the selected Grow animation.
+| Sound | Description |
+|-------|-------------|
+| `None` | No sound will play |
+| `Slide Whistle` | A growing slide whistle sound will play |
+| `Balloon` | The sound of a balloon being inflated will play |
+| `Custom` | Allows you to pick an MP3 or OGG file to play |
+## Commands Tab
+![Commands Tab](readme-assets/animations-tab.png)
+Godot-Show supports many different commands to control things like showing clips, and shoutouts.
+If the parameter is in [brackets] it is optional.
+| Command | Default | Parameters | Description |
+|---------|---------|------------|-------------|
+| `Show a random clip` | !rc | @username [count] | Plays a number of random clips for the specified username. |
+| `Queue a shoutout` | !qso | @username | Queue a shoutout for the user.  If the shoutouts are on cooldown, this will send a shoutout after cooldown. |
+| `Shoutout and random clip` | !so | @username [count] | Send a shoutout and play a number of random clips for the specified username. |
+| `Show a specific clip` | !sc | clip_url | Queue and play a specific clip from a clip URL. |
+| `Raider random clip` | !rrc | [count] | Play a number of random clips for the most recent raider. |
+| `Raider shoutout` | !rso |  | Queue a shoutout for the most recent raider. |
+| `Raider random clip and !so` | !rrcso | [count] | Play a number of random clips for the most recent raider and send a shoutout. |
+| `Clip Show` | !cs | [count] | Play a number of random clips from all users that have had clips played this session.  If count is not specified, we will continuously play clips until `Stop Clip Show` is called. |
+| `Stop Clip Show` | !scs |  | Stops the clip show after the current clip finishes. |
+| `Self Clip Show` | !css | [count] | Just like Clip Show, but for the Streamer's clips only. |
 
 
 ## About the [Web Application](https://madalee-com.github.io/godot-show/)
@@ -151,13 +203,6 @@ It works on everything, development is fully self contained between Godot and th
 
 ## Roadmap
 ```
-- [x] Release the initial version
-- [x] Have people tell us it doesn't work
-- [x] Fix bugs:
-- [x] Only lets broadcaster !so
-- [x] Only works at the configured ratio
-- [x] Some code cleanup and robustness adding
-- [x] Setup CI
 - [x] Add a "hey you want me to setup OBS for you?" dialog
 - [x] Cleanup errors and behaviors on initial setup
 - [x] Get the CI release to auto generate when a tag is pushed to main
@@ -166,9 +211,10 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Support grouped sources
 - [x] Avoid clip replays
 - [x] Add more animation options, such as "inflate" mode
+- [x] Play a sound when growing
+- [x] Command to add a clip to queue
+- [ ] Command to stop clip immediately?
 - [ ] Improve the Twitch connection process when failing or timing out
-- [ ] Play a sound when growing
-- [ ] Command to add a clip to queue
 ```
 
 ## Building/Compiling
@@ -207,3 +253,5 @@ This project is provided under the GNU General Public License v3.0. See the [LIC
 - [Twitcher](https://github.com/kanimaru/twitcher) - Provides the GDScript Twitch API
 - [OBS Websocket GD](https://github.com/you-win/obs-websocket-gd) - Provides the GDScript OBS API
 - [godot-ansi-escape-to-bbcode](https://github.com/fbcosentino/godot-ansi-escape-to-bbcode) - Converts ANSI escape codes to BBCode for captured logs.
+- [Slide Whistle Sound](https://freesound.org/s/482881/) - Cartoon_Whistle.wav by Brsjak -- https://freesound.org/s/482881/ -- License: Attribution 4.0
+- [Balloon Sound](https://freesound.org/s/82154/)Balloon-Inflate-25.wav by Gniffelbaf -- https://freesound.org/s/82154/ -- License: Creative Commons 0
