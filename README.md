@@ -77,6 +77,7 @@ You can set this up manually, but we recommend you let Godot-Show set it up for 
 4. On the OBS Configuration Needed screen, take note of the Scene that Godot-Show will be added to.
 4. Either click "Setup OBS for me" or add a the source and filters the dialog shows.
 5. In OBS move/copy the Godot-Show source from the scene you noted earlier to any scenes you want it in.
+6. If you want to use the Grow Sounds, you should also add an application or output audio capture to OBS.
 
 #### Connect to Twitch
 1. Click "Connect to Twitch"
@@ -150,6 +151,7 @@ If more than one of these is selected, one will be randomly chosen each time a c
 | `Television` | Disabled | The clip will expand like an old TV picture |
 ## Grow Sound
 If enabled, a sound will play as the clip grows on the screen.  The way the sound plays depends on the selected Grow animation.
+You will need to setup OBS to capture this sound, either through an application capture, or output capture.
 | Sound | Description |
 |-------|-------------|
 | `None` | No sound will play |
