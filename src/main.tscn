@@ -1667,7 +1667,6 @@ text = "Close"
 [node name="GrowSound" type="AudioStreamPlayer" parent="." unique_id=1423076173]
 unique_name_in_owner = true
 bus = &"Effect"
-playback_type = 1
 
 [connection signal="ready" from="." to="." method="_on_ready"]
 [connection signal="pressed" from="MainContainer/TabContainer/Home/HBoxContainer/TwitchConnect" to="." method="_on_twitch_connect_pressed"]

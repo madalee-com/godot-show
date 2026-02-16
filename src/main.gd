@@ -525,9 +525,9 @@ func set_grow_sound_from_id(id: int):
 	%Commands.use_grow_sound = true
 	match id:
 		GrowSoundOptionIds.SLIDE_WHISTLE:
-			%GrowSound.stream = AudioStreamOggVorbis.load_from_file("res://assets/audio/cartoon_whistle.ogg")
+			%GrowSound.stream = preload("res://assets/audio/cartoon_whistle.ogg")
 		GrowSoundOptionIds.BALLOON:
-			%GrowSound.stream = AudioStreamOggVorbis.load_from_file("res://assets/audio/balloon-inflate.ogg")
+			%GrowSound.stream = preload("res://assets/audio/balloon-inflate.ogg")
 		GrowSoundOptionIds.CUSTOM:
 			set_custom_grow_sound()
 		GrowSoundOptionIds.NONE:

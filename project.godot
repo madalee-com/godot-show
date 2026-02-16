@@ -23,6 +23,7 @@ config/settings_file="user://settings.cfg"
 [audio]
 
 buses/default_bus_layout="uid://bkpu3cjktblsg"
+general/default_playback_type.web=0
 general/text_to_speech=true
 
 [autoload]
@@ -44,7 +45,7 @@ display_server/size/mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/scrolllistcontainer/plugin.cfg", "res://addons/twitcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/twitcher/plugin.cfg")
 
 [gui]
 
