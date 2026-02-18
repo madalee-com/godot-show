@@ -426,7 +426,13 @@ func _on_obs_got_media_input_status(result) -> void:
 		return
 	# If we're here, the clip isn't playing
 	# If we think a clip is playing, then reset playback
-	if !clip_queue.is_empty() and clip_playing:
+	if !clip_queue.is_empty() and media_state in [
+		obs.MediaInputStates.OBS_MEDIA_STATE_PAUSED,
+		obs.MediaInputStates.OBS_MEDIA_STATE_STOPPED,
+		obs.MediaInputStates.OBS_MEDIA_STATE_ENDED,
+		obs.MediaInputStates.OBS_MEDIA_STATE_ERROR,
+		obs.MediaInputStates.OBS_MEDIA_STATE_NONE,
+	]:
 		emit_signal("bad_clip_state")
 	# Check if we're going from playing to not playing
 	if clip_playing:
@@ -445,6 +451,10 @@ func reset_playback():
 		clip_queue.insert(0, current_clip)
 		%ClipQueueList.move_item(%ClipQueueList.add_item("%s - %s" % [current_clip.broadcaster_name, current_clip.title]), 0)
 
+	fade_source(0.0)
+	await obs.source_filter_settings_set
+	clear_clip()
+	
 	current_clip = null
 	logger.log_debug("Wait for %f seconds before processing queue" % queue_delay)
 	await get_tree().create_timer(queue_delay).timeout
@@ -635,7 +645,7 @@ func scale_source(w: int, h: int):
 ## @param opacity The target opacity value (0.0 to 1.0).
 func fade_source(opacity: float):
 	if obs.obs_connected and obs_configured:
-		obs.set_source_filter_settings(source_name, fade_filter_name, { "opacity": opacity })
+		await obs.set_source_filter_settings(source_name, fade_filter_name, { "opacity": opacity })
 
 
 ## Processes the clip queue by playing the next clip if available.
@@ -1080,12 +1090,14 @@ func check_obs_config() -> bool:
 			%SetupOBS.show()
 		obs_configured = false
 		return false
+	obs_configured = true
 	# If the configuration is valid, hide the setup button and panel
 	if !%SetupOBS.visible:
 		logger.log_success("The OBS configuration looks good.")
 		%SetupOBS.hide()
+		fade_source(0.0)
+		clear_clip()
 	%OBSConfigPanel.hide()
-	obs_configured = true
 	obs_config_error_shown = false
 	return true
 
@@ -1278,6 +1290,7 @@ func add_clip(clip_id_url: String):
 		return
 	logger.log_error("Error retrieving clip from URL")
 
+
 ## Queues a shoutout for a specific user.
 ## This function adds the user to the shoutout queue and processes the queue if necessary.
 ##
@@ -1303,6 +1316,7 @@ func _on_shoutout_command_received(_from_username: String, _info: TwitchCommandI
 		queue_shoutout(args[0])
 		logger.log("Shoutout command triggered")
 
+
 ## Handles the event when a random clip command is received.
 ## This function is called when a random clip command is sent to the script.
 ## It adds random clips from the specified user to the queue.
@@ -1318,6 +1332,7 @@ func _on_random_clip_command_received(_from_username: String, _info: TwitchComma
 			clip_count = args[1].to_int()
 		add_random_clip(args[0], clip_count)
 		logger.log("Random clip command triggered")
+
 
 ## Handles the event when a shoutout and random clip command is received.
 ## This function is called when a shoutout and random clip command is sent to the script.
@@ -1336,6 +1351,7 @@ func _on_so_random_clip_command_received(_from_username: String, _info: TwitchCo
 		add_random_clip(args[0], clip_count)
 		logger.log("Shoutout and Random clip command triggered")
 
+
 ## Handles the event when a clip command is received.
 ## This function is called when a clip command is sent to the script.
 ## It adds the clip from the specified URL to the queue.
@@ -1350,6 +1366,7 @@ func _on_clip_command_received(_from_username: String, _info: TwitchCommandInfo,
 		process_clip_queue()
 		logger.log("Queue clip command triggered")
 
+
 ## Adds random clips from the user's recent raiders.
 ## This function adds random clips from the user's recent raiders.
 ##
@@ -1362,6 +1379,7 @@ func _on_raider_random_clip_command_received(_from_username: String, _info: Twit
 		if args.size() > 1 and args[1].is_valid_int():
 			clip_count = args[1].to_int()
 		add_random_clip(recent_raider, clip_count)
+
 
 ## Handles the event when a raider shoutout command is received.
 ## This function is called when a raider shoutout command is sent to the script.
@@ -1376,6 +1394,7 @@ func _on_raider_so_command_received(_from_username: String, _info: TwitchCommand
 		if recent_raider.is_empty():
 			return
 		queue_shoutout(recent_raider)
+
 
 ## Handles the event when a raider shoutout and random clip command is received.
 ## This function is called when a raider shoutout and random clip command is sent to the script.
@@ -1394,6 +1413,7 @@ func _on_raider_so_random_clip_command_received(_from_username: String, _info: T
 		if args.size() > 1 and args[1].is_valid_int():
 			clip_count = args[1].to_int()
 		add_random_clip(recent_raider, clip_count)
+
 
 ## Handles the event when a clip show command is received.
 ## This function is called when a clip show command is sent to the script.
@@ -1414,6 +1434,7 @@ func _on_clip_show_command_received(_from_username: String, _info: TwitchCommand
 		logger.log("Clip show command triggered")
 		process_clip_queue()
 
+
 ## Handles the event when a stop clip show command is received.
 ## This function is called when a stop clip show command is sent to the script.
 ## It stops the clip show.
@@ -1426,6 +1447,7 @@ func _on_stop_clip_show_command_received(_from_username: String, _info: TwitchCo
 	if %UseStopClipShowCmd.button_pressed:
 		clip_show_running = false
 		self_clip_show_running = false
+
 
 ## Handles the event when a self clip show command is received.
 ## This function is called when a self clip show command is sent to the script.
