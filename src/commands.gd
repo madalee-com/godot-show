@@ -426,7 +426,7 @@ func _on_obs_got_media_input_status(result) -> void:
 		return
 	# If we're here, the clip isn't playing
 	# If we think a clip is playing, then reset playback
-	if !clip_queue.is_empty() and media_state in [
+	if !clip_queue.is_empty() and clip_playing and media_state in [
 		obs.MediaInputStates.OBS_MEDIA_STATE_PAUSED,
 		obs.MediaInputStates.OBS_MEDIA_STATE_STOPPED,
 		obs.MediaInputStates.OBS_MEDIA_STATE_ENDED,
