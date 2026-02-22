@@ -1231,9 +1231,9 @@ func add_random_clip_from_cache(count: int = 1):
 		var cur_user_clips = user_clips[user_clips.keys().pick_random()]
 		var cur_user
 		if cur_user_clips.unplayed.is_empty():
-			cur_user = cur_user_clips.played[0].broadcaster_id
+			cur_user = cur_user_clips.played[0].display_name
 		else:
-			cur_user = cur_user_clips.unplayed[0].broadcaster_id
+			cur_user = cur_user_clips.unplayed[0].display_name
 		await add_random_clip(cur_user)
 
 
