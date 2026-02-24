@@ -135,6 +135,8 @@ var recent_raider = ""
 var clip_show_running = false
 # Flag to track if self clip show is running
 var self_clip_show_running = false
+# Keeps a list of which users are pending play in clip show, to prevent repeats
+var pend_clip_show_users = []
 
 
 ## Main process function that handles frame timing and animation updates
@@ -854,7 +856,7 @@ func get_random_clip_url(username: String) -> TwitchClip:
 		var so_user: TwitchUser
 		so_user = await Twitch.get_user(username)
 		if so_user == null:
-			logger.log("Couldn't get shoutout for user: %s" % username)
+			logger.log("Couldn't get data for user: %s" % username)
 			return
 		# Fetch a list of clips for the user
 		var clips: TwitchGetClips.Response
@@ -873,6 +875,8 @@ func get_random_clip_url(username: String) -> TwitchClip:
 			return null
 		logger.log_debug("Got clips for user: %s and stored in clip cache" % username)
 		user_clips[username] = { "unplayed": clips.data, "played": [] }
+		if !pend_clip_show_users.is_empty():
+			pend_clip_show_users.append(username)
 
 	# Pick a random clip from the list
 	if user_clips[username].unplayed.is_empty():
@@ -1228,12 +1232,12 @@ func add_random_clip_from_cache(count: int = 1):
 	for each in count:
 		if user_clips.is_empty():
 			return
-		var cur_user_clips = user_clips[user_clips.keys().pick_random()]
-		var cur_user
-		if cur_user_clips.unplayed.is_empty():
-			cur_user = cur_user_clips.played[0].display_name
-		else:
-			cur_user = cur_user_clips.unplayed[0].display_name
+		var cur_user = user_clips.keys().front()
+		if user_clips.size() > 1:
+			if pend_clip_show_users.is_empty():
+				pend_clip_show_users = user_clips.keys().duplicate()
+			cur_user = pend_clip_show_users.pick_random()
+			pend_clip_show_users.erase(cur_user)
 		await add_random_clip(cur_user)
 
 
@@ -1447,6 +1451,8 @@ func _on_stop_clip_show_command_received(_from_username: String, _info: TwitchCo
 	if %UseStopClipShowCmd.button_pressed:
 		clip_show_running = false
 		self_clip_show_running = false
+		pend_clip_show_users = []
+		logger.log("Stopping clip show")
 
 
 ## Handles the event when a self clip show command is received.
