@@ -155,13 +155,20 @@ func _process(delta: float) -> void:
 
 
 ## Updates the UI elements related to shoutouts, such as countdown bars and text.
-func process_ui(_delta: float):
+func process_ui(delta: float):
 	if so_on_cooldown:
 		%SOCountDownBar.value = %SOCountdownTimer.time_left
 		%SOCountDown.text = "%d seconds" % %SOCountdownTimer.time_left
 	else:
 		%SOCountDownBar.value = 0
 		%SOCountDown.text = "Ready for Shoutout"
+	if %QueueCountDownBar.value > 0:
+		%QueueCountDownBar.value = %QueueCountdownTimer.time_left
+	if %QueueCountDownBar.value <= 0:
+		%QueueCountDownBar.value = 0
+		%QueueCountDown.text = "Ready for Next Clip"
+	else:
+		%QueueCountDown.text = "%d seconds" % %QueueCountDownBar.value
 
 
 ## Handles the resetting variables if the clip is in an unexpected state
@@ -423,6 +430,10 @@ func _on_obs_got_media_input_status(result) -> void:
 			logger.log_debug("Looks like we are truly playing the clip now")
 			clip_playing = true
 			try_clip_play = false
+			%QueueCountDownBar.max_value = ((result.mediaDuration - media_cursor) / 1000.0)
+			%QueueCountDownBar.value = ((result.mediaDuration - media_cursor) / 1000.0)
+			%QueueCountDown.text = "%d seconds" % ((result.mediaDuration - media_cursor) / 1000.0)
+			%QueueCountdownTimer.start(((result.mediaDuration - media_cursor) / 1000.0))
 			emit_signal("clip_started") # Signal that a clip has started playing
 		last_media_state = media_state
 		return
@@ -871,7 +882,7 @@ func get_random_clip_url(username: String) -> TwitchClip:
 
 		# If no clips are found, return null
 		if clips.data.is_empty():
-			logger.log_debug("No clips found for user: %s", username)
+			logger.log_debug("No clips found for user: %s" % username)
 			return null
 		logger.log_debug("Got clips for user: %s and stored in clip cache" % username)
 		user_clips[username] = { "unplayed": clips.data, "played": [] }
@@ -880,8 +891,8 @@ func get_random_clip_url(username: String) -> TwitchClip:
 
 	# Pick a random clip from the list
 	if user_clips[username].unplayed.is_empty():
-		logger.log_debug("No unplayed clips found for user: %s moving played to unplayed", username)
-		user_clips[username].unplayed = user_clips[username].played
+		logger.log_debug("No unplayed clips found for user: %s moving played to unplayed" % username)
+		user_clips[username].unplayed = user_clips[username].played.duplicate_deep()
 		user_clips[username].played.clear()
 	logger.log_debug("Picking a random clip from the unplayed list")
 	var clip = user_clips[username].unplayed.pick_random()
@@ -1422,6 +1433,7 @@ func _on_raider_so_random_clip_command_received(_from_username: String, _info: T
 ## Handles the event when a clip show command is received.
 ## This function is called when a clip show command is sent to the script.
 ## It adds random clips from the cache to the queue.
+## If a clip show is already running it will be stopped, instead
 ##
 ## @param _from_username The username of the user who sent the clip show command.
 ## @param _info The information about the clip show command.
@@ -1429,10 +1441,13 @@ func _on_raider_so_random_clip_command_received(_from_username: String, _info: T
 ## @return void
 func _on_clip_show_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
 	if %UseClipShowCmd.button_pressed:
-		self_clip_show_running = false
 		if args.size() > 0 and args[0].is_valid_int():
 			add_random_clip_from_cache(args[0].to_int())
 			return
+		if clip_show_running:
+			stop_clip_show()
+			return
+		self_clip_show_running = false
 		add_random_clip_from_cache(1)
 		clip_show_running = true
 		logger.log("Clip show command triggered")
@@ -1449,15 +1464,19 @@ func _on_clip_show_command_received(_from_username: String, _info: TwitchCommand
 ## @return void
 func _on_stop_clip_show_command_received(_from_username: String, _info: TwitchCommandInfo, _args: PackedStringArray) -> void:
 	if %UseStopClipShowCmd.button_pressed:
-		clip_show_running = false
-		self_clip_show_running = false
-		pend_clip_show_users = []
-		logger.log("Stopping clip show")
+		stop_clip_show()
 
+## Stops a running clip show of any tyme
+func stop_clip_show():
+	clip_show_running = false
+	self_clip_show_running = false
+	pend_clip_show_users = []
+	logger.log("Stopping clip show")
 
 ## Handles the event when a self clip show command is received.
 ## This function is called when a self clip show command is sent to the script.
 ## It adds random clips from the cache to the queue.
+## If a self clip show is already running it will be stopped, instead
 ##
 ## @param _from_username The username of the user who sent the self clip show command.
 ## @param _info The information about the self clip show command.
@@ -1465,10 +1484,13 @@ func _on_stop_clip_show_command_received(_from_username: String, _info: TwitchCo
 ## @return void
 func _on_self_clip_show_command_received(_from_username: String, _info: TwitchCommandInfo, args: PackedStringArray) -> void:
 	if %UseSelfClipShowCmd.button_pressed:
-		clip_show_running = false
 		if args.size() > 0 and args[0].is_valid_int():
 			add_random_self_clip(args[0].to_int())
 			return
+		if self_clip_show_running:
+			stop_clip_show()
+			return
+		clip_show_running = false
 		add_random_self_clip(1)
 		self_clip_show_running = true
 		logger.log("Self clip show command triggered")

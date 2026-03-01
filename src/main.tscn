@@ -63,9 +63,10 @@ vertical = true
 [node name="TabContainer" type="TabContainer" parent="MainContainer" unique_id=146571510]
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 0
+current_tab = 1
 
 [node name="Home" type="VBoxContainer" parent="MainContainer/TabContainer" unique_id=1975399472]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -98,7 +99,6 @@ unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Queue" type="GridContainer" parent="MainContainer/TabContainer" unique_id=146922328]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -112,9 +112,37 @@ drag_area_highlight_in_editor = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label" type="Label" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer" unique_id=397571393]
+[node name="HBoxContainer" type="HBoxContainer" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer" unique_id=996372359]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer/HBoxContainer" unique_id=397571393]
 layout_mode = 2
 text = "Clip Queue"
+
+[node name="QueueCountDownBar" type="ProgressBar" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer/HBoxContainer" unique_id=1945753848]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 120.0
+show_percentage = false
+
+[node name="QueueCountDown" type="Label" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer/HBoxContainer/QueueCountDownBar" unique_id=121268612]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0 seconds"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="QueueCountdownTimer" type="Timer" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer/HBoxContainer/QueueCountDownBar" unique_id=118239031]
+unique_name_in_owner = true
+wait_time = 120.0
+one_shot = true
 
 [node name="PanelContainer" type="PanelContainer" parent="MainContainer/TabContainer/Queue/HSplitContainer/VBoxContainer" unique_id=330374418]
 layout_mode = 2
@@ -983,7 +1011,7 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 tooltip_text = "Queue a shoutout and displays a random clip from the most recent raider."
 mouse_filter = 1
-text = "Clip Show"
+text = "Clip Show(Start/Stop)"
 
 [node name="ClipShowCmd" type="LineEdit" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer8" unique_id=1071670990]
 unique_name_in_owner = true
@@ -999,30 +1027,6 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Enable"
 
-[node name="HBoxContainer9" type="HFlowContainer" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer" unique_id=1207869385]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9" unique_id=930703728]
-custom_minimum_size = Vector2(220, 0)
-layout_mode = 2
-tooltip_text = "Queue a shoutout and displays a random clip from the most recent raider."
-mouse_filter = 1
-text = "Stop Clip Show"
-
-[node name="StopClipShowCmd" type="LineEdit" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9" unique_id=1751851059]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "!scs"
-max_length = 100
-emoji_menu_enabled = false
-select_all_on_focus = true
-
-[node name="UseStopClipShowCmd" type="CheckButton" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9" unique_id=1482283957]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Enable"
-
 [node name="HBoxContainer10" type="HFlowContainer" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer" unique_id=1897173067]
 layout_mode = 2
 
@@ -1031,7 +1035,7 @@ custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 tooltip_text = "Queue a shoutout and displays a random clip from the most recent raider."
 mouse_filter = 1
-text = "Self Clip Show"
+text = "Self Clip Show(Start/Stop)"
 
 [node name="SelfClipShowCmd" type="LineEdit" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer10" unique_id=283337343]
 unique_name_in_owner = true
@@ -1043,6 +1047,30 @@ emoji_menu_enabled = false
 select_all_on_focus = true
 
 [node name="UseSelfClipShowCmd" type="CheckButton" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer10" unique_id=2070659227]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable"
+
+[node name="HBoxContainer9" type="HFlowContainer" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer" unique_id=1207869385]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9" unique_id=930703728]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+tooltip_text = "Queue a shoutout and displays a random clip from the most recent raider."
+mouse_filter = 1
+text = "Stop Any Clip Show"
+
+[node name="StopClipShowCmd" type="LineEdit" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9" unique_id=1751851059]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "!scs"
+max_length = 100
+emoji_menu_enabled = false
+select_all_on_focus = true
+
+[node name="UseStopClipShowCmd" type="CheckButton" parent="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9" unique_id=1482283957]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Enable"
@@ -1719,10 +1747,10 @@ bus = &"Effect"
 [connection signal="toggled" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer7/UseRaiderSORandomCmd" to="." method="_on_use_raider_so_random_cmd_toggled"]
 [connection signal="text_changed" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer8/ClipShowCmd" to="." method="_on_clip_show_cmd_text_changed"]
 [connection signal="toggled" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer8/UseClipShowCmd" to="." method="_on_use_clip_show_cmd_toggled"]
-[connection signal="text_changed" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9/StopClipShowCmd" to="." method="_on_stop_clip_show_cmd_text_changed"]
-[connection signal="toggled" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9/UseStopClipShowCmd" to="." method="_on_use_stop_clip_show_cmd_toggled"]
 [connection signal="text_changed" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer10/SelfClipShowCmd" to="." method="_on_self_clip_show_cmd_text_changed"]
 [connection signal="toggled" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer10/UseSelfClipShowCmd" to="." method="_on_use_self_clip_show_cmd_toggled"]
+[connection signal="text_changed" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9/StopClipShowCmd" to="." method="_on_stop_clip_show_cmd_text_changed"]
+[connection signal="toggled" from="MainContainer/TabContainer/Commands/GridContainer/HFlowContainer/CommandsContainer/PanelContainer/VBoxContainer/HBoxContainer9/UseStopClipShowCmd" to="." method="_on_use_stop_clip_show_cmd_toggled"]
 [connection signal="bad_clip_state" from="Commands" to="Commands" method="_on_bad_clip_state"]
 [connection signal="clip_ended" from="Commands" to="Commands" method="_on_clip_ended"]
 [connection signal="clip_started" from="Commands" to="Commands" method="_on_clip_started"]
