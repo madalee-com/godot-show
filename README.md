@@ -215,6 +215,11 @@ It works on everything, development is fully self contained between Godot and th
 - [x] Add more animation options, such as "inflate" mode
 - [x] Play a sound when growing
 - [x] Command to add a clip to queue
+- [ ] Disable controller input and make sure keyboard is ignrored in background
+- [ ] Limit max number of clips that can be added at once
+- [ ] Add command to offer to do clip shoutout via command or URL
+- [ ] Add an opt out list
+- [ ] Make scheduled shoutout show an expected time
 - [ ] Command to stop clip immediately?
 - [ ] Improve the Twitch connection process when failing or timing out
 ```

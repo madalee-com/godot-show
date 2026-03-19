@@ -63,10 +63,9 @@ vertical = true
 [node name="TabContainer" type="TabContainer" parent="MainContainer" unique_id=146571510]
 layout_mode = 2
 size_flags_vertical = 3
-current_tab = 1
+current_tab = 0
 
 [node name="Home" type="VBoxContainer" parent="MainContainer/TabContainer" unique_id=1975399472]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -99,6 +98,7 @@ unique_name_in_owner = true
 layout_mode = 2
 
 [node name="Queue" type="GridContainer" parent="MainContainer/TabContainer" unique_id=146922328]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -1644,7 +1644,7 @@ script = ExtResource("10_uewes")
 offset_left = 9.0
 offset_top = 9.0
 offset_right = 866.0
-offset_bottom = 644.0
+offset_bottom = 576.0
 vertical = true
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="OBSWebsocketPanel/BoxContainer" unique_id=1862786349]

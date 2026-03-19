@@ -1200,10 +1200,10 @@ func _on_obs_scene_item_transform_changed(event_data: Dictionary) -> void:
 				if i > -1:
 					cur_source_name = scene_item_list[i].sourceName
 
-		# If this transform is fro, the correct source name, then update the clip ratio.
+		# If this transform is from, the correct source name, then update the clip ratio.
 		if wait_for_clip_transform and cur_source_name == source_name:
 			logger.log_debug("The transform was for our source, updating clip ratio")
-			if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0:
+			if event_data.sceneItemTransform.sourceWidth > 0.0 and event_data.sceneItemTransform.sourceHeight > 0.0 and event_data.sceneItemTransform.sourceWidth != event_data.sceneItemTransform.sourceHeight:
 				wait_for_clip_transform = false
 				cur_clip_ratio = event_data.sceneItemTransform.sourceWidth / event_data.sceneItemTransform.sourceHeight
 				logger.log_debug("The new clip ratio is: %f" % cur_clip_ratio)
