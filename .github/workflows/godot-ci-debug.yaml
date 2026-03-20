@@ -7,7 +7,7 @@ permissions:
   contents: write
 
 env:
-  GODOT_VERSION: 4.61
+  GODOT_VERSION: 4.6.1
   PROJECT_PATH: .
 
 jobs:

@@ -11,7 +11,7 @@ permissions:
   attestations: write
 
 env:
-  GODOT_VERSION: 4.61
+  GODOT_VERSION: 4.6.1
   PROJECT_PATH: .
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
     name: Windows x64 Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
-      image: barichello/godot-ci:4.6
+      image: barichello/godot-ci:4.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,7 +47,7 @@ jobs:
     name: Linux x86/x64 Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
-      image: barichello/godot-ci:4.6
+      image: barichello/godot-ci:4.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,7 +74,7 @@ jobs:
     name: Web Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
-      image: barichello/godot-ci:4.6
+      image: barichello/godot-ci:4.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -108,7 +108,7 @@ jobs:
     name: MacOS Export
     runs-on: ubuntu-24.04  # Use 24.04 with godot 4
     container:
-      image: barichello/godot-ci:4.6
+      image: barichello/godot-ci:4.6.1
     steps:
       - name: Checkout
         uses: actions/checkout@v4
