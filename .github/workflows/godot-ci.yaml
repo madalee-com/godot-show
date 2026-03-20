@@ -11,7 +11,7 @@ permissions:
   attestations: write
 
 env:
-  GODOT_VERSION: 4.6
+  GODOT_VERSION: 4.61
   PROJECT_PATH: .
 
 jobs:
