@@ -16,8 +16,8 @@
 extends Node
 
 const HttpUtil = preload("res://addons/twitcher/lib/http/http_util.gd")
-const TWITCH_VIDEO_API_CLIENT = "kd1unb4b3q4t58fwlpcbzcbnm76a8fp"
-const TWITCH_VIDEO_API_HASH = "36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11"
+const TWITCH_VIDEO_API_CLIENT = "kimne78kx3ncx6brgo4mv6wki5h1ko"
+const TWITCH_VIDEO_API_HASH = "4f35f1ac933d76b1da008c806cd5546a7534dfaff83e033a422a81f24e5991b3"
 const SHOUTOUT_COOLDOWN = 120
 const PER_USER_SHOUTOUT_COOLDOWN = 3600
 
@@ -932,7 +932,10 @@ func get_clip_url(clip_id: String):
 		JSON.stringify(
 			{
 				"operationName": "VideoAccessToken_Clip",
-				"variables": { "slug": clip_id },
+				"variables": {
+					"platform": "web",
+					"slug": clip_id
+				},
 				"extensions": {
 					"persistedQuery": {
 						"version": 1,
@@ -949,8 +952,13 @@ func get_clip_url(clip_id: String):
 
 	# If the request was successful, parse the response and construct the clip URL
 	if res.response_code == 200:
-		logger.log_debug("Got clip token from Twitch API")
-		var parsed = JSON.parse_string(res.response_data.get_string_from_utf8())
+		logger.log_debug("Got response from Twitch API")
+		var parsed: Dictionary = JSON.parse_string(res.response_data.get_string_from_utf8())
+		if parsed.has("errors") and parsed.errors.size() > 0:
+			logger.log_error("Error getting clip URL from Twitch: %s" % parsed.errors[0].message)
+			return null
+		else:
+			logger.log_debug("Got clip token from Twitch API")
 
 		var clip_url = parsed.data.clip.videoQualities[0].sourceURL + "?token=%s&sig=%s" % [
 			parsed.data.clip.playbackAccessToken.value.uri_encode(),
